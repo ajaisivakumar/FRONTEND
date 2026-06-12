@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrainServe — Order Management</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f7f7;
+    --surface: #ffffff;
+    --border: #e0e0e0;
+    --border-dark: #bdbdbd;
+    --text: #1a1a1a;
+    --text-muted: #6b6b6b;
+    --accent: #1a1a1a;
+    --accent-fg: #ffffff;
+    --danger: #c0392b;
+    --success: #27ae60;
+    --warn: #e67e22;
+    --radius: 6px;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+  .hidden { display: none !important; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .gap-8 { gap: 8px; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .w-full { width: 100%; }
+  .text-muted { color: var(--text-muted); }
+  .text-sm { font-size: 12px; }
+  .text-xl { font-size: 22px; font-weight: 700; }
+  .bold { font-weight: 600; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .mb-8 { margin-bottom: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+  .p-16 { padding: 16px; }
+  .text-center { text-align: center; }
+  .text-success { color: var(--success); }
+  .text-danger { color: var(--danger); }
+  .text-warn { color: var(--warn); }
+
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  }
+  .badge-pending   { background: #fff3cd; color: #856404; }
+  .badge-accepted  { background: #d1e7dd; color: #0f5132; }
+  .badge-completed { background: #cff4fc; color: #055160; }
+  .badge-cancelled { background: #f8d7da; color: #842029; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 16px; border-radius: var(--radius); border: 1px solid transparent;
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s;
+    font-family: var(--font); text-decoration: none; gap: 6px;
+  }
+  .btn:hover { opacity: .82; }
+  .btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn-outline  { background: transparent; color: var(--text); border-color: var(--border-dark); }
+  .btn-danger   { background: var(--danger); color: #fff; }
+  .btn-success  { background: var(--success); color: #fff; }
+  .btn-sm   { padding: 5px 10px; font-size: 12px; }
+  .btn-full { width: 100%; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* Form */
+  label { font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  input, select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: var(--radius); font-family: var(--font); font-size: 13px;
+    color: var(--text); background: var(--surface); outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 60px; }
+  .form-group { display: flex; flex-direction: column; margin-bottom: 14px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* ETA time row — three selects side by side */
+  .time-row { display: flex; gap: 6px; align-items: center; }
+  .time-row select { flex: 1; }
+  .time-row .ampm-sel { flex: 0 0 72px; }
+
+  /* Card */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+
+  /* Topbar */
+  .topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 20px; height: 52px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-brand { font-weight: 700; font-size: 16px; letter-spacing: -.3px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .user-pill { font-size: 12px; background: var(--bg); border: 1px solid var(--border); padding: 4px 10px; border-radius: 20px; color: var(--text-muted); }
+
+  /* Sidebar */
+  .app-layout { display: flex; min-height: calc(100vh - 52px); }
+  .sidebar { width: 200px; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; }
+  @media (max-width: 650px) { .sidebar { display: none; } }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 8px; padding: 9px 16px;
+    cursor: pointer; font-size: 13px; color: var(--text-muted);
+    border-left: 3px solid transparent; transition: all .12s;
+  }
+  .sidebar-item:hover { background: var(--bg); color: var(--text); }
+  .sidebar-item.active { color: var(--text); font-weight: 600; border-left-color: var(--accent); background: var(--bg); }
+  .main-content { flex: 1; padding: 24px 20px; overflow-y: auto; max-width: 900px; }
+
+  /* Mobile nav */
+  .mob-nav {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--border); z-index: 100; padding: 6px 0;
+  }
+  @media (max-width: 650px) { .mob-nav { display: flex; justify-content: space-around; } }
+  .mob-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 10px; cursor: pointer; font-size: 10px; color: var(--text-muted); }
+  .mob-nav-item.active { color: var(--text); font-weight: 600; }
+  @media (max-width: 650px) { .main-content { padding-bottom: 70px; } }
+
+  /* Login */
+  #login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .login-box { width: 100%; max-width: 380px; }
+  .login-brand { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .role-tabs { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .role-tab { flex: 1; padding: 8px; text-align: center; font-size: 12px; font-weight: 500; cursor: pointer; background: var(--surface); color: var(--text-muted); border-right: 1px solid var(--border); transition: all .12s; }
+  .role-tab:last-child { border-right: none; }
+  .role-tab.active { background: var(--accent); color: var(--accent-fg); }
+
+  /* Order cards */
+  .order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+  .order-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .order-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  .order-meta-item { font-size: 12px; color: var(--text-muted); }
+  .order-meta-item span { color: var(--text); font-weight: 500; }
+  .order-items-list { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .order-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+
+  /* Product picker */
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 8px; }
+  .product-tile { border: 2px solid var(--border); border-radius: var(--radius); padding: 10px 8px; text-align: center; cursor: pointer; transition: border-color .12s; background: var(--surface); }
+  .product-tile:hover { border-color: var(--border-dark); }
+  .product-tile.selected { border-color: var(--accent); }
+  .product-tile .prod-icon { font-size: 36px; line-height: 1; margin-bottom: 6px; }
+  .product-tile .prod-name { font-size: 11px; font-weight: 500; }
+  .product-tile .prod-price { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .qty-box { display: flex; align-items: center; gap: 4px; justify-content: center; margin-top: 8px; }
+  .qty-btn { width: 22px; height: 22px; border: 1px solid var(--border-dark); background: var(--bg); border-radius: 4px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .qty-input { width: 32px; text-align: center; padding: 2px 4px; font-size: 12px; border: 1px solid var(--border); border-radius: 4px; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; padding: 8px 10px; border-bottom: 2px solid var(--border); text-align: left; }
+  .data-table td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg); }
+  .table-wrap { overflow-x: auto; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .stat-val { font-size: 26px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Upload */
+  .upload-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: border-color .15s; position: relative; }
+  .upload-area:hover { border-color: var(--border-dark); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-preview { margin-top: 10px; }
+  .upload-preview img { max-width: 100%; max-height: 200px; border-radius: var(--radius); border: 1px solid var(--border); }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .modal { background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 20px; position: relative; }
+  .modal-close { position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); line-height: 1; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; padding-right: 24px; }
+
+  /* ── Popup alert (crew 20-min reminders) ── */
+  .popup-alert {
+    position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 2px solid var(--accent);
+    border-radius: var(--radius); padding: 18px 22px; z-index: 400;
+    max-width: 340px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,.15);
+    animation: popIn .25s ease;
+  }
+  @keyframes popIn { from { transform: translateX(-50%) translateY(-12px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+  .popup-alert-icon { font-size: 28px; margin-bottom: 8px; }
+  .popup-alert-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .popup-alert-body { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+  .popup-alert-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Toast */
+  #toast-container { position: fixed; bottom: 80px; right: 16px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+  @media (min-width: 651px) { #toast-container { bottom: 20px; } }
+  .toast { background: var(--text); color: #fff; padding: 10px 14px; border-radius: var(--radius); font-size: 13px; max-width: 280px; animation: slideIn .2s ease; }
+  .toast.success { background: var(--success); }
+  .toast.warn { background: var(--warn); }
+  .toast.error { background: var(--danger); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Notifications */
+  .notif-item { padding: 12px; border-bottom: 1px solid var(--border); }
+  .notif-item:last-child { border-bottom: none; }
+  .notif-item p { font-size: 13px; }
+  .notif-item .notif-time { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .notif-item.unread { background: #f0f4ff; }
+
+  /* Misc */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .chart-bar-wrap { display: flex; align-items: flex-end; gap: 8px; height: 100px; margin-top: 12px; }
+  .chart-bar { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; min-width: 20px; opacity: .7; transition: opacity .15s; cursor: default; position: relative; }
+  .chart-bar:hover { opacity: 1; }
+  .chart-bar-label { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 4px; }
+  .chart-bar-val { font-size: 10px; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); color: var(--text-muted); white-space: nowrap; }
+  .crew-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .crew-info { font-size: 13px; }
+  .crew-name { font-weight: 600; }
+  .crew-status { font-size: 11px; color: var(--text-muted); }
+
+  @media (max-width: 500px) {
+    .main-content { padding: 16px 12px; }
+    .topbar { padding: 0 12px; }
+    .product-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-brand">TrainServe</div>
+    <div class="login-sub">Railway pantry order management</div>
+    <div class="role-tabs">
+      <div class="role-tab active" onclick="setRole('user')">User</div>
+      <div class="role-tab" onclick="setRole('crew')">Crew</div>
+      <div class="role-tab" onclick="setRole('admin')">Admin</div>
+    </div>
+    <div id="login-user">
+      <div class="form-group"><label>Email (Gmail)</label><input type="email" id="u-email" placeholder="you@gmail.com" autocomplete="email"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="u-pass" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary btn-full" onclick="loginAs('user')">Sign in with Gmail</button>
+      <p class="text-sm text-muted mt-8 text-center">New here? Your account is created on first sign-in.</p>
+    </div>
+    <div id="login-crew" class="hidden">
+      <div class="form-group">
+        <label>Crew ID</label>
+        <select id="c-id">
+          <option value="">Select crew member</option>
+          <option value="crew1">Crew 1 — Ramesh Kumar</option>
+          <option value="crew2">Crew 2 — Priya Devi</option>
+          <option value="crew3">Crew 3 — Suresh Babu</option>
+          <option value="crew4">Crew 4 — Meena S</option>
+          <option value="crew5">Crew 5 — Arjun M</option>
+        </select>
+      </div>
+      <div class="form-group"><label>PIN</label><input type="password" id="c-pin" placeholder="4-digit PIN" maxlength="4" autocomplete="current-password"></div>
+      <button class="btn btn-primary btn-full" onclick="loginAs('crew')">Sign in as Crew</button>
+    </div>
+    <div id="login-admin" class="hidden">
+      <div class="form-group"><label>Admin Email</label><input type="email" id="a-email" placeholder="admin@trainserve.in" autocomplete="email"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="a-pass" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary btn-full" onclick="loginAs('admin')">Sign in as Admin</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <span class="topbar-brand">TrainServe</span>
+    <div class="topbar-right">
+      <span class="user-pill" id="topbar-user">—</span>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="app-layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main-content" id="main-content"></div>
+  </div>
+  <div class="mob-nav" id="mob-nav"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModalOverlay(event)">
+  <div class="modal" id="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- POPUP ALERT (crew reminders) -->
+<div class="popup-alert hidden" id="popup-alert">
+  <div class="popup-alert-icon" id="popup-icon"></div>
+  <div class="popup-alert-title" id="popup-title"></div>
+  <div class="popup-alert-body" id="popup-body"></div>
+  <div class="popup-alert-actions">
+    <button class="btn btn-outline btn-sm" onclick="dismissPopup()">Dismiss</button>
+    <button class="btn btn-primary btn-sm" onclick="dismissPopup()">Got it</button>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+let currentRole = 'user';
+let currentUser = null;
+let currentPage = null;
+let crewReminderTimers = [];   // holds setInterval IDs so we can clear on logout
+
+const CREW_MEMBERS = [
+  { id: 'crew1', name: 'Ramesh Kumar', online: true },
+  { id: 'crew2', name: 'Priya Devi',   online: true },
+  { id: 'crew3', name: 'Suresh Babu', online: false },
+  { id: 'crew4', name: 'Meena S',     online: true },
+  { id: 'crew5', name: 'Arjun M',     online: true },
+];
+
+const PRODUCTS = [
+  { id: 'wb1', name: 'Water Bottle',  emoji: '💧', price: 20,  unit: '1L'      },
+  { id: 'wb2', name: 'Water Bottle',  emoji: '💧', price: 15,  unit: '500ml'   },
+  { id: 'ch1', name: 'Chips (Small)', emoji: '🍟', price: 50,  unit: '50g pack'},
+  { id: 'ch2', name: 'Chips (Large)', emoji: '🍟', price: 100, unit: '100g pk' },
+  { id: 'bsc', name: 'Biscuits',      emoji: '🍪', price: 30,  unit: 'Pack'    },
+  { id: 'juc', name: 'Juice',         emoji: '🥤', price: 40,  unit: '200ml'   },
+  { id: 'sna', name: 'Sandwich',      emoji: '🥪', price: 80,  unit: 'Piece'   },
+  { id: 'tea', name: 'Tea / Coffee',  emoji: '☕', price: 20,  unit: 'Cup'     },
+];
+
+/* 3-step popup sequence shown every 20 minutes after a crew accepts an order */
+const CREW_POPUP_STEPS = [
+  { icon: '📦', title: 'Are all items packed?', body: 'Please verify every item in this order is properly packed before moving ahead.' },
+  { icon: '🚚', title: 'Are the items ready for delivery?', body: 'Confirm packaging is sealed and the order is ready to go to the train.' },
+  { icon: '🚂', title: 'The train will arrive shortly — 15 minutes!', body: 'Head to the delivery station now. The train is almost here.' },
+];
+
+/* ═══════════════════════════════
+   STORAGE HELPERS
+═══════════════════════════════ */
+function getOrders()      { return JSON.parse(localStorage.getItem('ts_orders')  || '[]'); }
+function saveOrders(o)    { localStorage.setItem('ts_orders', JSON.stringify(o)); }
+function getUsers()       { return JSON.parse(localStorage.getItem('ts_users')   || '[]'); }
+function saveUsers(u)     { localStorage.setItem('ts_users', JSON.stringify(u)); }
+function getNotifs(uid)   { return JSON.parse(localStorage.getItem('ts_notifs_' + uid) || '[]'); }
+function saveNotifs(uid,n){ localStorage.setItem('ts_notifs_' + uid, JSON.stringify(n)); }
+
+function seedOrders() {
+  if (getOrders().length > 0) return;
+  const sample = [
+    {
+      id: 'ORD001', userId: 'user@gmail.com', userName: 'Vikram R',
+      trainNo: '12631', trainName: 'Nellai Express', currentLocation: 'Madurai Jn', eta: '02:30 PM',
+      items: [{ id:'wb1', name:'Water Bottle', qty:3, price:20 }, { id:'ch1', name:'Chips (Small)', qty:2, price:50 }],
+      total: 160, status: 'pending', createdAt: new Date(Date.now()-35*60000).toISOString(),
+      assignedCrew: null, paymentScreenshot: null, role: 'user'
+    },
+    {
+      id: 'ORD002', userId: 'pantry@train.in', userName: 'Pantry Coord.',
+      trainNo: '12635', trainName: 'Vaigai SF Express', currentLocation: 'Tiruchirappalli', eta: '04:00 PM',
+      items: [{ id:'juc', name:'Juice', qty:5, price:40 }, { id:'bsc', name:'Biscuits', qty:4, price:30 }],
+      total: 320, status: 'accepted', createdAt: new Date(Date.now()-2*3600000).toISOString(),
+      assignedCrew: 'crew1', paymentScreenshot: null, role: 'pantry'
+    },
+    {
+      id: 'ORD003', userId: 'user2@gmail.com', userName: 'Kavitha M',
+      trainNo: '22625', trainName: 'Double Decker', currentLocation: 'Dindigul', eta: '01:15 PM',
+      items: [{ id:'tea', name:'Tea / Coffee', qty:6, price:20 }, { id:'sna', name:'Sandwich', qty:2, price:80 }],
+      total: 280, status: 'completed', createdAt: new Date(Date.now()-5*3600000).toISOString(),
+      assignedCrew: 'crew2', paymentScreenshot: 'uploaded', role: 'user',
+      completedAt: new Date(Date.now()-4*3600000).toISOString()
+    },
+  ];
+  saveOrders(sample);
+}
+
+/* ═══════════════════════════════
+   LOGIN
+═══════════════════════════════ */
+function setRole(role) {
+  currentRole = role;
+  ['user','crew','admin'].forEach((r,i) => {
+    document.querySelectorAll('.role-tab')[i].classList.toggle('active', r === role);
+  });
+  document.getElementById('login-user').classList.toggle('hidden', role !== 'user');
+  document.getElementById('login-crew').classList.toggle('hidden', role !== 'crew');
+  document.getElementById('login-admin').classList.toggle('hidden', role !== 'admin');
+}
+
+function loginAs(role) {
+  if (role === 'user') {
+    const email = document.getElementById('u-email').value.trim();
+    const pass  = document.getElementById('u-pass').value;
+    if (!email || !pass) { showToast('Enter email and password', 'error'); return; }
+    const users = getUsers();
+    if (!users.find(u => u.email === email)) {
+      users.push({ email, name: email.split('@')[0], role: 'user', createdAt: new Date().toISOString() });
+      saveUsers(users);
+    }
+    currentUser = { id: email, name: email.split('@')[0], role: 'user', email };
+  } else if (role === 'crew') {
+    const id  = document.getElementById('c-id').value;
+    const pin = document.getElementById('c-pin').value;
+    if (!id || !pin) { showToast('Select crew ID and enter PIN', 'error'); return; }
+    currentUser = { id, name: CREW_MEMBERS.find(c => c.id === id).name, role: 'crew', email: id + '@crew' };
+  } else {
+    const email = document.getElementById('a-email').value.trim();
+    const pass  = document.getElementById('a-pass').value;
+    if (!email || !pass) { showToast('Enter credentials', 'error'); return; }
+    currentUser = { id: 'admin', name: 'Admin', role: 'admin', email };
+  }
+  seedOrders();
+  launchApp();
+}
+
+function logout() {
+  clearAllReminderTimers();
+  currentUser = null; currentPage = null;
+  document.getElementById('login-page').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('popup-alert').classList.add('hidden');
+}
+
+/* ═══════════════════════════════
+   APP SHELL
+═══════════════════════════════ */
+const NAV_CONFIG = {
+  user:  [{ id:'place-order',   label:'Place Order',    icon:'📦' },
+          { id:'my-orders',     label:'My Orders',      icon:'📋' },
+          { id:'notifications', label:'Notifications',  icon:'🔔' }],
+  crew:  [{ id:'pending-orders',label:'Incoming Orders',icon:'📬' },
+          { id:'my-deliveries', label:'My Deliveries',  icon:'🚚' },
+          { id:'notifications', label:'Notifications',  icon:'🔔' }],
+  admin: [{ id:'dashboard',     label:'Dashboard',      icon:'📊' },
+          { id:'all-orders',    label:'All Orders',     icon:'📋' },
+          { id:'place-order',   label:'Place Order',    icon:'📦' },
+          { id:'crew-mgmt',     label:'Crew',           icon:'👥' },
+          { id:'analytics',     label:'Analytics',      icon:'📈' },
+          { id:'users',         label:'Users',          icon:'👤' }],
+};
+
+function launchApp() {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('topbar-user').textContent =
+    currentUser.name + ' · ' + currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+  buildNav();
+  navigateTo(NAV_CONFIG[currentUser.role][0].id);
+}
+
+function buildNav() {
+  const items = NAV_CONFIG[currentUser.role];
+  const sidebar = document.getElementById('sidebar');
+  const mobNav  = document.getElementById('mob-nav');
+  sidebar.innerHTML = '';
+  mobNav.innerHTML  = '';
+  items.forEach(item => {
+    sidebar.innerHTML += `<div class="sidebar-item" id="si-${item.id}" onclick="navigateTo('${item.id}')">${item.icon} ${item.label}</div>`;
+    mobNav.innerHTML  += `<div class="mob-nav-item" id="mi-${item.id}" onclick="navigateTo('${item.id}')"><span style="font-size:20px">${item.icon}</span>${item.label}</div>`;
+  });
+}
+
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.sidebar-item, .mob-nav-item').forEach(el => el.classList.remove('active'));
+  const si = document.getElementById('si-' + page);
+  const mi = document.getElementById('mi-' + page);
+  if (si) si.classList.add('active');
+  if (mi) mi.classList.add('active');
+  const mc = document.getElementById('main-content');
+  mc.innerHTML = '';
+  const pages = {
+    'place-order':    renderPlaceOrder,
+    'my-orders':      renderMyOrders,
+    'notifications':  renderNotifications,
+    'pending-orders': renderPendingOrders,
+    'my-deliveries':  renderMyDeliveries,
+    'dashboard':      renderDashboard,
+    'all-orders':     renderAllOrders,
+    'crew-mgmt':      renderCrewMgmt,
+    'analytics':      renderAnalytics,
+    'users':          renderUsers,
+  };
+  if (pages[page]) pages[page](mc);
+}
+
+/* ═══════════════════════════════
+   ETA HELPERS  (12-hr AM/PM)
+═══════════════════════════════ */
+function buildEtaHTML(selectedVal) {
+  /* selectedVal is stored as "hh:mm AM/PM" e.g. "02:30 PM" */
+  let selHr = '', selMin = '00', selAmpm = 'AM';
+  if (selectedVal) {
+    const parts = selectedVal.split(' ');
+    selAmpm = parts[1] || 'AM';
+    const hm = (parts[0] || '').split(':');
+    selHr  = hm[0] || '';
+    selMin = hm[1] || '00';
+  }
+
+  const hours = Array.from({length:12},(_,i) => {
+    const v = String(i+1).padStart(2,'0');
+    return `<option value="${v}" ${selHr===v?'selected':''}>${v}</option>`;
+  }).join('');
+
+  const mins = ['00','05','10','15','20','25','30','35','40','45','50','55'].map(m =>
+    `<option value="${m}" ${selMin===m?'selected':''}>${m}</option>`
+  ).join('');
+
+  const ampm = ['AM','PM'].map(a =>
+    `<option value="${a}" ${selAmpm===a?'selected':''}>${a}</option>`
+  ).join('');
+
+  return `
+    <div class="time-row">
+      <select id="po-eta-hr">${hours}</select>
+      <span style="font-size:16px;color:var(--text-muted);flex-shrink:0">:</span>
+      <select id="po-eta-min">${mins}</select>
+      <select id="po-eta-ampm" class="ampm-sel">${ampm}</select>
+    </div>`;
+}
+
+function getEtaValue() {
+  const hr   = document.getElementById('po-eta-hr')?.value   || '';
+  const min  = document.getElementById('po-eta-min')?.value  || '00';
+  const ampm = document.getElementById('po-eta-ampm')?.value || 'AM';
+  if (!hr) return '';
+  return `${hr}:${min} ${ampm}`;
+}
+
+/* ═══════════════════════════════
+   PAGE: PLACE ORDER
+═══════════════════════════════ */
+let orderCart = {};
+
+function renderPlaceOrder(el) {
+  orderCart = {};
+  el.innerHTML = `
+    <div class="text-xl mb-8">Place an Order</div>
+    <p class="text-muted mb-16" style="font-size:13px">Fill in the train details and select items.</p>
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="po-name" placeholder="Full name" value="${currentUser.name}">
+        </div>
+        <div class="form-group">
+          <label>Train Number</label>
+          <input type="text" id="po-trainno" placeholder="e.g. 12631">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Train Name</label>
+          <input type="text" id="po-trainname" placeholder="e.g. Nellai Express">
+        </div>
+        <div class="form-group">
+          <label>Current Location of Train</label>
+          <input type="text" id="po-location" placeholder="e.g. Madurai Jn">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Expected Arrival Time at Delivery Station</label>
+        ${buildEtaHTML('')}
+      </div>
+    </div>
+
+    <div class="card mt-16">
+      <div class="card-title">Select Items</div>
+      <div class="product-grid" id="product-grid"></div>
+    </div>
+
+    <div class="card mt-16">
+      <div class="card-title">Order Summary</div>
+      <div id="order-summary-list"><p class="text-muted text-sm">No items selected.</p></div>
+      <div class="divider"></div>
+      <div class="flex justify-between bold" id="order-total-row"><span>Total</span><span>₹0</span></div>
+      <button class="btn btn-primary btn-full mt-16" onclick="submitOrder()">Submit Order</button>
+    </div>
+  `;
+  renderProductGrid();
+}
+
+function renderProductGrid() {
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '';
+  PRODUCTS.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'product-tile' + (orderCart[p.id] ? ' selected' : '');
+    div.id = 'pt-' + p.id;
+    div.innerHTML = `
+      <div class="prod-icon">${p.emoji}</div>
+      <div class="prod-name">${p.name}</div>
+      <div class="prod-price">₹${p.price} · ${p.unit}</div>
+      <div class="qty-box">
+        <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
+        <input class="qty-input" type="number" id="qty-${p.id}" min="0" value="${orderCart[p.id]||0}" onchange="setQty('${p.id}',this.value)">
+        <button class="qty-btn" onclick="changeQty('${p.id}',1)">+</button>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function changeQty(pid, delta) {
+  const nv = Math.max(0, (orderCart[pid]||0) + delta);
+  if (nv === 0) delete orderCart[pid]; else orderCart[pid] = nv;
+  const inp = document.getElementById('qty-' + pid);
+  if (inp) inp.value = nv;
+  document.getElementById('pt-'+pid)?.classList.toggle('selected', nv > 0);
+  updateOrderSummary();
+}
+
+function setQty(pid, val) {
+  const nv = Math.max(0, parseInt(val)||0);
+  if (nv === 0) delete orderCart[pid]; else orderCart[pid] = nv;
+  document.getElementById('pt-'+pid)?.classList.toggle('selected', nv > 0);
+  updateOrderSummary();
+}
+
+function updateOrderSummary() {
+  const list    = document.getElementById('order-summary-list');
+  const totalEl = document.getElementById('order-total-row');
+  const ids     = Object.keys(orderCart);
+  if (ids.length === 0) {
+    list.innerHTML = '<p class="text-muted text-sm">No items selected.</p>';
+    if (totalEl) totalEl.lastElementChild.textContent = '₹0';
+    return;
+  }
+  let html = '', total = 0;
+  ids.forEach(id => {
+    const p = PRODUCTS.find(x => x.id === id), qty = orderCart[id], sub = p.price * qty;
+    total += sub;
+    html += `<div class="order-item-row"><span>${p.name} × ${qty}</span><span>₹${sub}</span></div>`;
+  });
+  list.innerHTML = html;
+  if (totalEl) totalEl.lastElementChild.textContent = '₹' + total;
+}
+
+function submitOrder() {
+  const name      = document.getElementById('po-name')?.value.trim();
+  const trainNo   = document.getElementById('po-trainno')?.value.trim();
+  const trainName = document.getElementById('po-trainname')?.value.trim();
+  const location  = document.getElementById('po-location')?.value.trim();
+  const eta       = getEtaValue();
+  if (!name || !trainNo || !trainName || !location || !eta) { showToast('Fill all train details', 'error'); return; }
+  if (Object.keys(orderCart).length === 0) { showToast('Select at least one item', 'error'); return; }
+  const items = Object.keys(orderCart).map(id => {
+    const p = PRODUCTS.find(x => x.id === id);
+    return { id, name: p.name, qty: orderCart[id], price: p.price };
+  });
+  const total = items.reduce((s,i) => s + i.price * i.qty, 0);
+  const order = {
+    id: 'ORD' + Date.now().toString().slice(-6),
+    userId: currentUser.id, userName: name, trainNo, trainName,
+    currentLocation: location, eta, items, total,
+    status: 'pending', createdAt: new Date().toISOString(),
+    assignedCrew: null, paymentScreenshot: null, role: currentUser.role,
+  };
+  const orders = getOrders();
+  orders.unshift(order);
+  saveOrders(orders);
+  CREW_MEMBERS.forEach(c => {
+    const n = getNotifs(c.id);
+    n.unshift({ id: Date.now()+c.id, msg: `New order ${order.id} from ${name} — Train ${trainNo} (ETA ${eta})`, time: new Date().toISOString(), read: false });
+    saveNotifs(c.id, n);
+  });
+  const an = getNotifs('admin');
+  an.unshift({ id: Date.now()+'a', msg: `New order ${order.id} placed by ${name} (ETA ${eta})`, time: new Date().toISOString(), read: false });
+  saveNotifs('admin', an);
+  showToast('Order submitted! ID: ' + order.id, 'success');
+  orderCart = {};
+  navigateTo(currentUser.role === 'admin' ? 'all-orders' : 'my-orders');
+}
+
+/* ═══════════════════════════════
+   PAGE: MY ORDERS (user)
+═══════════════════════════════ */
+function renderMyOrders(el) {
+  const orders = getOrders().filter(o => o.userId === currentUser.id);
+  el.innerHTML = `<div class="flex justify-between items-center mb-16">
+    <div class="text-xl">My Orders</div>
+    <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">+ New Order</button>
+  </div>`;
+  if (!orders.length) { el.innerHTML += '<p class="text-muted text-center mt-24">No orders yet.</p>'; return; }
+  orders.forEach(o => el.appendChild(makeOrderCard(o, 'user')));
+}
+
+/* ═══════════════════════════════
+   PAGE: PENDING ORDERS (crew)
+═══════════════════════════════ */
+function renderPendingOrders(el) {
+  const orders = getOrders().filter(o =>
+    o.status === 'pending' || (o.status === 'accepted' && o.assignedCrew === currentUser.id)
+  );
+  el.innerHTML = `<div class="text-xl mb-16">Incoming Orders</div>`;
+  if (!orders.length) { el.innerHTML += '<p class="text-muted text-center mt-24">No pending orders.</p>'; return; }
+  orders.forEach(o => el.appendChild(makeOrderCard(o, 'crew')));
+}
+
+/* ═══════════════════════════════
+   PAGE: MY DELIVERIES (crew)
+   Shows ALL orders assigned to this crew (including completed)
+═══════════════════════════════ */
+function renderMyDeliveries(el) {
+  const orders = getOrders().filter(o => o.assignedCrew === currentUser.id);
+  el.innerHTML = `<div class="text-xl mb-16">My Deliveries</div>`;
+  if (!orders.length) { el.innerHTML += '<p class="text-muted text-center mt-24">No deliveries assigned yet.</p>'; return; }
+  orders.forEach(o => el.appendChild(makeOrderCard(o, 'crew')));
+}
+
+/* ═══════════════════════════════
+   ORDER CARD (reusable)
+═══════════════════════════════ */
+function makeOrderCard(o, viewer) {
+  const div = document.createElement('div');
+  div.className = 'order-card';
+  const badge = `<span class="badge badge-${o.status}">${o.status.charAt(0).toUpperCase()+o.status.slice(1)}</span>`;
+  let actions = '';
+  if (viewer === 'crew') {
+    if (o.status === 'pending') {
+      actions = `<button class="btn btn-success btn-sm" onclick="acceptOrder('${o.id}')">Accept</button>`;
+    } else if (o.status === 'accepted' && o.assignedCrew === currentUser.id) {
+      actions = `<button class="btn btn-primary btn-sm" onclick="openUploadModal('${o.id}')">Upload Payment</button>`;
+    }
+  }
+  if (viewer === 'admin') {
+    if (o.status === 'pending') actions += `<button class="btn btn-outline btn-sm" onclick="adminAssign('${o.id}')">Assign Crew</button> `;
+    actions += `<button class="btn btn-outline btn-sm" onclick="viewOrderDetail('${o.id}')">Details</button>`;
+  }
+  const crew   = o.assignedCrew ? CREW_MEMBERS.find(c => c.id === o.assignedCrew) : null;
+  const items  = o.items.map(i => `<div class="order-item-row"><span>${i.name} × ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('');
+  div.innerHTML = `
+    <div class="order-card-header">
+      <div><div class="bold">${o.id}</div><div class="text-sm text-muted">${formatTime(o.createdAt)}</div></div>
+      <div style="display:flex;gap:6px;align-items:center">${badge}</div>
+    </div>
+    <div class="order-meta">
+      <div class="order-meta-item">Name: <span>${o.userName}</span></div>
+      <div class="order-meta-item">Train: <span>${o.trainNo} · ${o.trainName}</span></div>
+      <div class="order-meta-item">Location: <span>${o.currentLocation}</span></div>
+      <div class="order-meta-item">ETA: <span>${o.eta}</span></div>
+      ${crew ? `<div class="order-meta-item">Crew: <span>${crew.name}</span></div>` : ''}
+      ${o.completedAt ? `<div class="order-meta-item">Completed: <span>${formatTime(o.completedAt)}</span></div>` : ''}
+    </div>
+    <div class="order-items-list">${items}<div class="order-item-row bold mt-8"><span>Total</span><span>₹${o.total}</span></div></div>
+    ${actions ? `<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">${actions}</div>` : ''}`;
+  return div;
+}
+
+/* ═══════════════════════════════
+   ACCEPT ORDER + 20-MIN POPUP REMINDERS
+═══════════════════════════════ */
+function acceptOrder(orderId) {
+  const orders = getOrders();
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  o.status = 'accepted';
+  o.assignedCrew = currentUser.id;
+  o.acceptedAt   = new Date().toISOString();
+  saveOrders(orders);
+
+  /* Persist reminder notifs to the notification tab */
+  const notifs = getNotifs(currentUser.id);
+  notifs.unshift({ id: Date.now()+'r', read: false,
+    msg: `✅ You accepted order ${orderId} (ETA ${o.eta}). Delivery reminders will pop up every 20 min.`,
+    time: new Date().toISOString() });
+  saveNotifs(currentUser.id, notifs);
+
+  /* Start the 3-step popup sequence, one every 20 minutes.
+     In a real app you'd use Service Worker push; here we use setInterval.
+     For demo purposes the interval is set to 20 min (1 200 000 ms). */
+  startCrewReminderCycle(orderId, o.eta);
+
+  showToast('Order accepted! Reminder popups every 20 min.', 'success');
+  navigateTo('pending-orders');
+}
+
+function startCrewReminderCycle(orderId, eta) {
+  clearAllReminderTimers();   // cancel any existing cycle first
+  let step = 0;
+  const INTERVAL_MS = 20 * 60 * 1000;   // 20 minutes
+
+  /* Show first popup after 20 min, then repeat */
+  const tid = setInterval(() => {
+    if (step >= CREW_POPUP_STEPS.length) { clearInterval(tid); return; }
+    showCrewPopup(CREW_POPUP_STEPS[step], orderId, eta);
+    step++;
+  }, INTERVAL_MS);
+
+  crewReminderTimers.push(tid);
+}
+
+function clearAllReminderTimers() {
+  crewReminderTimers.forEach(t => clearInterval(t));
+  crewReminderTimers = [];
+}
+
+/* ── Popup display ── */
+function showCrewPopup(step, orderId, eta) {
+  document.getElementById('popup-icon').textContent  = step.icon;
+  document.getElementById('popup-title').textContent = step.title;
+  document.getElementById('popup-body').textContent  = step.body + `\n\nOrder: ${orderId} · ETA ${eta}`;
+  document.getElementById('popup-alert').classList.remove('hidden');
+
+  /* Also log to notifications */
+  const notifs = getNotifs(currentUser.id);
+  notifs.unshift({ id: Date.now()+'p', read: false,
+    msg: `${step.icon} ${step.title} — Order ${orderId} (ETA ${eta})`,
+    time: new Date().toISOString() });
+  saveNotifs(currentUser.id, notifs);
+}
+
+function dismissPopup() {
+  document.getElementById('popup-alert').classList.add('hidden');
+}
+
+/* ── Demo trigger: show popup immediately for testing ── */
+/* Uncomment the line below while testing to see the popup without waiting 20 min:
+   window._testPopup = () => showCrewPopup(CREW_POPUP_STEPS[0], 'ORD-DEMO', '03:45 PM');
+*/
+
+/* ═══════════════════════════════
+   UPLOAD PAYMENT SCREENSHOT
+═══════════════════════════════ */
+function openUploadModal(orderId) {
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Upload Payment Screenshot</div>
+    <p class="text-muted text-sm mb-8">Order ID: ${orderId}</p>
+    <div class="upload-area">
+      <input type="file" accept="image/*" onchange="previewUpload(this,'${orderId}')">
+      <div>📎 Tap to upload payment screenshot</div>
+      <div class="text-sm text-muted mt-8">JPG, PNG supported</div>
+      <div class="upload-preview" id="up-${orderId}"></div>
+    </div>
+    <button class="btn btn-success btn-full mt-16" onclick="completeOrder('${orderId}')">Mark as Completed</button>`;
+}
+
+function previewUpload(input, orderId) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('up-'+orderId).innerHTML = `<img src="${e.target.result}" alt="Payment screenshot">`;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+/* After payment upload → order is completed and visible everywhere */
+function completeOrder(orderId) {
+  const orders = getOrders();
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  o.status            = 'completed';
+  o.completedAt       = new Date().toISOString();
+  o.paymentScreenshot = 'uploaded';
+  saveOrders(orders);   // single source of truth — crew & admin pages read same store
+
+  /* Notify admin */
+  const an = getNotifs('admin');
+  an.unshift({ id: Date.now()+'c', read: false,
+    msg: `✅ Order ${orderId} completed by ${currentUser.name}. Amount received: ₹${o.total}. ETA was ${o.eta}.`,
+    time: new Date().toISOString() });
+  saveNotifs('admin', an);
+
+  /* Notify the crew member themselves */
+  const cn = getNotifs(currentUser.id);
+  cn.unshift({ id: Date.now()+'cc', read: false,
+    msg: `✅ Order ${orderId} marked completed. Payment screenshot uploaded. Amount: ₹${o.total}.`,
+    time: new Date().toISOString() });
+  saveNotifs(currentUser.id, cn);
+
+  /* Stop reminder cycle now that order is done */
+  clearAllReminderTimers();
+  dismissPopup();
+
+  closeModal();
+  showToast('Order completed! Added to My Deliveries.', 'success');
+  /* Navigate to My Deliveries so crew can see it immediately */
+  navigateTo('my-deliveries');
+}
+
+/* ═══════════════════════════════
+   ADMIN: ASSIGN / DETAIL
+═══════════════════════════════ */
+function adminAssign(orderId) {
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  const opts = CREW_MEMBERS.map(c => `<option value="${c.id}">${c.name}${c.online?' ✓':''}</option>`).join('');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Assign Crew — ${orderId}</div>
+    <div class="form-group"><label>Select Crew Member</label><select id="assign-crew-sel">${opts}</select></div>
+    <button class="btn btn-primary btn-full mt-8" onclick="doAssign('${orderId}')">Assign</button>`;
+}
+
+function doAssign(orderId) {
+  const crewId = document.getElementById('assign-crew-sel').value;
+  const orders = getOrders();
+  const o = orders.find(x => x.id === orderId);
+  if (!o) return;
+  o.status      = 'accepted';
+  o.assignedCrew = crewId;
+  o.acceptedAt  = new Date().toISOString();
+  saveOrders(orders);
+  const n = getNotifs(crewId);
+  n.unshift({ id: Date.now(), read: false,
+    msg: `Order ${orderId} assigned to you by Admin. ETA: ${o.eta}`, time: new Date().toISOString() });
+  saveNotifs(crewId, n);
+  closeModal();
+  showToast('Crew assigned!', 'success');
+  navigateTo('all-orders');
+}
+
+function viewOrderDetail(orderId) {
+  const o = getOrders().find(x => x.id === orderId);
+  if (!o) return;
+  const crew = o.assignedCrew ? CREW_MEMBERS.find(c => c.id === o.assignedCrew) : null;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">Order Detail — ${o.id}</div>
+    <div class="order-meta" style="flex-direction:column;gap:8px">
+      <div class="order-meta-item">Customer: <span>${o.userName}</span></div>
+      <div class="order-meta-item">Train: <span>${o.trainNo} · ${o.trainName}</span></div>
+      <div class="order-meta-item">Location: <span>${o.currentLocation}</span></div>
+      <div class="order-meta-item">ETA: <span>${o.eta}</span></div>
+      <div class="order-meta-item">Status: <span>${o.status}</span></div>
+      <div class="order-meta-item">Crew: <span>${crew?crew.name:'—'}</span></div>
+      <div class="order-meta-item">Amount: <span>₹${o.total}</span></div>
+      <div class="order-meta-item">Placed at: <span>${formatTime(o.createdAt)}</span></div>
+      ${o.completedAt?`<div class="order-meta-item">Completed at: <span>${formatTime(o.completedAt)}</span></div>`:''}
+      ${o.paymentScreenshot?`<div class="order-meta-item">Payment: <span>✅ Screenshot uploaded</span></div>`:''}
+    </div>
+    <div class="divider"></div>
+    <div class="card-title">Items</div>
+    ${o.items.map(i=>`<div class="order-item-row"><span>${i.name} × ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
+    <div class="order-item-row bold mt-8"><span>Total</span><span>₹${o.total}</span></div>`;
+}
+
+/* ═══════════════════════════════
+   PAGE: NOTIFICATIONS
+═══════════════════════════════ */
+function renderNotifications(el) {
+  const notifs = getNotifs(currentUser.id);
+  el.innerHTML = `
+    <div class="flex justify-between items-center mb-16">
+      <div class="text-xl">Notifications</div>
+      <button class="btn btn-outline btn-sm" onclick="markAllRead()">Mark all read</button>
+    </div>
+    <div class="card">
+      ${notifs.length === 0
+        ? '<p class="text-muted text-sm text-center p-16">No notifications.</p>'
+        : notifs.map(n=>`<div class="notif-item${n.read?'':' unread'}">
+            <p>${n.msg}</p><div class="notif-time">${formatTime(n.time)}</div>
+          </div>`).join('')}
+    </div>`;
+}
+
+function markAllRead() {
+  saveNotifs(currentUser.id, getNotifs(currentUser.id).map(n=>({...n,read:true})));
+  navigateTo('notifications');
+}
+
+/* ═══════════════════════════════
+   PAGE: ADMIN — DASHBOARD
+═══════════════════════════════ */
+function renderDashboard(el) {
+  const orders   = getOrders();
+  const pending  = orders.filter(o=>o.status==='pending').length;
+  const accepted = orders.filter(o=>o.status==='accepted').length;
+  const completed= orders.filter(o=>o.status==='completed').length;
+  const revenue  = orders.filter(o=>o.status==='completed').reduce((s,o)=>s+o.total,0);
+  el.innerHTML = `
+    <div class="text-xl mb-16">Dashboard</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val">${orders.length}</div><div class="stat-label">Total Orders</div></div>
+      <div class="stat-card"><div class="stat-val text-warn">${pending}</div><div class="stat-label">Pending</div></div>
+      <div class="stat-card"><div class="stat-val">${accepted}</div><div class="stat-label">In Progress</div></div>
+      <div class="stat-card"><div class="stat-val text-success">${completed}</div><div class="stat-label">Completed</div></div>
+      <div class="stat-card"><div class="stat-val">₹${revenue}</div><div class="stat-label">Revenue</div></div>
+    </div>
+    <div class="card mb-16">
+      <div class="card-title">Recent Orders</div>
+      ${orders.slice(0,5).map(o=>`
+        <div class="flex justify-between items-center" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div class="bold" style="font-size:13px">${o.id} — ${o.trainName}</div>
+            <div class="text-sm text-muted">${o.userName} · ETA ${o.eta}</div>
+          </div>
+          <span class="badge badge-${o.status}">${o.status}</span>
+        </div>`).join('')}
+      <button class="btn btn-outline btn-sm mt-8" onclick="navigateTo('all-orders')">View all</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Crew Status</div>
+      ${CREW_MEMBERS.map(c=>{
+        const active = orders.filter(o=>o.assignedCrew===c.id&&o.status==='accepted').length;
+        return `<div class="crew-card">
+          <div class="crew-info"><div class="crew-name">${c.name}</div><div class="crew-status">${active} active order${active!==1?'s':''}</div></div>
+          <span class="${c.online?'text-success':'text-muted'}" style="font-size:12px">${c.online?'● Online':'○ Offline'}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+/* ═══════════════════════════════
+   PAGE: ADMIN — ALL ORDERS
+═══════════════════════════════ */
+function renderAllOrders(el) {
+  const orders = getOrders();
+  let filterStatus = 'all';
+  const render = () => {
+    const filtered = filterStatus==='all' ? orders : orders.filter(o=>o.status===filterStatus);
+    el.innerHTML = `
+      <div class="flex justify-between items-center mb-16">
+        <div class="text-xl">All Orders</div>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">+ New Order</button>
+      </div>
+      <div class="flex gap-8 mb-16" style="flex-wrap:wrap">
+        ${['all','pending','accepted','completed'].map(s=>`
+          <button class="btn btn-sm ${filterStatus===s?'btn-primary':'btn-outline'}" onclick="filterOrders('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`).join('')}
+      </div>
+      <div class="table-wrap card">
+        <table class="data-table">
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Train</th><th>ETA</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            ${filtered.map(o=>{
+              const crew = o.assignedCrew?CREW_MEMBERS.find(c=>c.id===o.assignedCrew):null;
+              return `<tr>
+                <td class="bold">${o.id}</td>
+                <td>${o.userName}</td>
+                <td>${o.trainNo}<br><span class="text-muted text-sm">${o.trainName}</span></td>
+                <td>${o.eta}</td>
+                <td>₹${o.total}</td>
+                <td><span class="badge badge-${o.status}">${o.status}</span></td>
+                <td>
+                  ${o.status==='pending'?`<button class="btn btn-outline btn-sm" onclick="adminAssign('${o.id}')">Assign</button> `:''}
+                  <button class="btn btn-outline btn-sm" onclick="viewOrderDetail('${o.id}')">View</button>
+                </td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        ${filtered.length===0?'<p class="text-muted text-sm text-center p-16">No orders found.</p>':''}
+      </div>`;
+    window.filterOrders = s => { filterStatus=s; render(); };
+  };
+  render();
+}
+
+/* ═══════════════════════════════
+   PAGE: CREW MANAGEMENT
+═══════════════════════════════ */
+function renderCrewMgmt(el) {
+  const orders = getOrders();
+  el.innerHTML = `<div class="text-xl mb-16">Crew Management</div>
+    ${CREW_MEMBERS.map(c=>{
+      const co = orders.filter(o=>o.assignedCrew===c.id);
+      const done = co.filter(o=>o.status==='completed').length;
+      const active = co.filter(o=>o.status==='accepted').length;
+      return `<div class="card mb-12">
+        <div class="flex justify-between items-center">
+          <div><div class="bold">${c.name}</div><div class="text-sm text-muted">${c.id}</div></div>
+          <span class="${c.online?'text-success':'text-muted'}" style="font-size:12px">${c.online?'● Online':'○ Offline'}</span>
+        </div>
+        <div class="divider"></div>
+        <div class="order-meta">
+          <div class="order-meta-item">Completed: <span>${done}</span></div>
+          <div class="order-meta-item">Active: <span>${active}</span></div>
+          <div class="order-meta-item">Total: <span>${co.length}</span></div>
+          <div class="order-meta-item">Revenue: <span>₹${co.filter(o=>o.status==='completed').reduce((s,o)=>s+o.total,0)}</span></div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+/* ═══════════════════════════════
+   PAGE: ANALYTICS
+═══════════════════════════════ */
+function renderAnalytics(el) {
+  const orders    = getOrders();
+  const completed = orders.filter(o=>o.status==='completed');
+  const revenue   = completed.reduce((s,o)=>s+o.total,0);
+  const avg       = completed.length ? Math.round(revenue/completed.length) : 0;
+  const itemCount = {};
+  orders.forEach(o=>o.items.forEach(i=>{ itemCount[i.name]=(itemCount[i.name]||0)+i.qty; }));
+  const topItems  = Object.entries(itemCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxItem   = topItems[0]?.[1]||1;
+  const crewStats = CREW_MEMBERS.map(c=>({
+    name: c.name.split(' ')[0],
+    done: orders.filter(o=>o.assignedCrew===c.id&&o.status==='completed').length
+  }));
+  const maxCrew = Math.max(...crewStats.map(c=>c.done),1);
+  el.innerHTML = `
+    <div class="text-xl mb-16">Analytics</div>
+    <div class="stats-grid mb-16">
+      <div class="stat-card"><div class="stat-val">₹${revenue}</div><div class="stat-label">Total Revenue</div></div>
+      <div class="stat-card"><div class="stat-val">${completed.length}</div><div class="stat-label">Orders Fulfilled</div></div>
+      <div class="stat-card"><div class="stat-val">₹${avg}</div><div class="stat-label">Avg Order Value</div></div>
+      <div class="stat-card"><div class="stat-val">${orders.length}</div><div class="stat-label">Total Orders</div></div>
+    </div>
+    <div class="card mb-16">
+      <div class="card-title">Top Items Ordered</div>
+      <div class="chart-bar-wrap">
+        ${topItems.map(([name,count])=>`
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <div class="chart-bar" style="height:${Math.round(count/maxItem*100)}px;width:100%;position:relative">
+              <span class="chart-bar-val">${count}</span></div>
+            <div class="chart-bar-label">${name.split(' ')[0]}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card mb-16">
+      <div class="card-title">Crew Performance (Completed)</div>
+      <div class="chart-bar-wrap">
+        ${crewStats.map(c=>`
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+            <div class="chart-bar" style="height:${Math.round(c.done/maxCrew*100)}px;width:100%;position:relative">
+              <span class="chart-bar-val">${c.done}</span></div>
+            <div class="chart-bar-label">${c.name}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Order Status Breakdown</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">
+        ${['pending','accepted','completed'].map(s=>{
+          const cnt = orders.filter(o=>o.status===s).length;
+          const pct = orders.length ? Math.round(cnt/orders.length*100) : 0;
+          return `<div>
+            <div class="bold">${pct}%</div>
+            <div class="text-sm text-muted">${s.charAt(0).toUpperCase()+s.slice(1)} (${cnt})</div>
+            <div style="height:6px;width:80px;background:var(--border);border-radius:3px;margin-top:4px">
+              <div style="height:6px;width:${pct}%;background:var(--accent);border-radius:3px"></div>
+            </div></div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════
+   PAGE: USERS
+═══════════════════════════════ */
+function renderUsers(el) {
+  const users = getUsers();
+  el.innerHTML = `
+    <div class="text-xl mb-16">Registered Users</div>
+    <div class="table-wrap card">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+        <tbody>
+          ${users.length===0
+            ? '<tr><td colspan="4" class="text-center text-muted">No users registered yet.</td></tr>'
+            : users.map(u=>`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>${formatTime(u.createdAt)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ═══════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════ */
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+function closeModalOverlay(e) { if (e.target===document.getElementById('modal-overlay')) closeModal(); }
+
+/* ═══════════════════════════════
+   TOAST
+═══════════════════════════════ */
+function showToast(msg, type='') {
+  const div = document.createElement('div');
+  div.className = 'toast ' + type;
+  div.textContent = msg;
+  document.getElementById('toast-container').appendChild(div);
+  setTimeout(() => div.remove(), 3500);
+}
+
+/* ═══════════════════════════════
+   UTILS
+═══════════════════════════════ */
+function formatTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' ' +
+         d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+window.filterOrders = () => {};
+</script>
+</body>
+</html>
