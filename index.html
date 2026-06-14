@@ -638,16 +638,13 @@ table.dt tbody tr:hover td { background: var(--bg); }
 
 <script>
 /* ═══════════════════════════════════════
-   CONSTANTS
+   BACKEND URL — change this if you move your backend
 ═══════════════════════════════════════ */
-const CREW_MEMBERS = [
-  { id:'crew1', name:'Ramesh Kumar', initials:'RK', online:true  },
-  { id:'crew2', name:'Priya Devi',   initials:'PD', online:true  },
-  { id:'crew3', name:'Suresh Babu', initials:'SB', online:false },
-  { id:'crew4', name:'Meena S',     initials:'MS', online:true  },
-  { id:'crew5', name:'Arjun M',     initials:'AM', online:true  },
-];
+const API = 'http://localhost:8080/api';
 
+/* ═══════════════════════════════════════
+   CONSTANTS (same as original)
+═══════════════════════════════════════ */
 const PRODUCTS = [
   { id:'wb1', name:'Water Bottle',   icon:'💧', price:20,  unit:'1 L'        },
   { id:'wb2', name:'Water Bottle',   icon:'💧', price:15,  unit:'500 ml'     },
@@ -668,56 +665,38 @@ const REMINDER_STEPS = [
 /* ═══════════════════════════════════════
    STATE
 ═══════════════════════════════════════ */
-let currentUser = null;
-let currentRole = 'user';
+let currentUser    = null;  // { token, id, name, email, role, crewId, initials }
+let currentRole    = 'user';
 let currentAuthMode = 'signin';
-let currentPage = null;
-let orderCart  = {};
+let currentPage    = null;
+let orderCart      = {};
 let reminderTimers = [];
+let crewList       = [];    // loaded from /api/users/crew after login
 
 /* ═══════════════════════════════════════
-   STORAGE
+   API HELPERS
 ═══════════════════════════════════════ */
-const LS = {
-  get: k      => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
-};
-const getOrders  = ()    => LS.get('ts_orders')  || [];
-const setOrders  = v     => LS.set('ts_orders', v);
-const getUsers   = ()    => LS.get('ts_users')   || [];
-const setUsers   = v     => LS.set('ts_users', v);
-const getNotifs  = uid   => LS.get('ts_n_' + uid) || [];
-const setNotifs  = (u,v) => LS.set('ts_n_' + u, v);
-const pushNotif  = (uid, msg) => {
-  const n = getNotifs(uid);
-  n.unshift({ id: Date.now() + uid, msg, time: new Date().toISOString(), read: false });
-  setNotifs(uid, n);
-};
+async function apiFetch(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (currentUser?.token) headers['Authorization'] = 'Bearer ' + currentUser.token;
+  const res = await fetch(API + path, { ...options, headers: { ...headers, ...(options.headers||{}) } });
+  if (res.status === 204) return null;
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
+  return data;
+}
 
-function seedOrders() {
-  if (getOrders().length) return;
-  setOrders([
-    { id:'ORD001', userId:'demo@gmail.com', userName:'Vikram R', trainNo:'12631',
-      trainName:'Nellai Express', currentLocation:'Madurai Jn', eta:'14:30',
-      items:[{id:'wb1',name:'Water Bottle',qty:3,price:20},{id:'ch1',name:'Chips — Small',qty:2,price:50}],
-      total:160, status:'pending', createdAt:new Date(Date.now()-35*60000).toISOString(),
-      assignedCrew:null, paymentScreenshot:null },
-    { id:'ORD002', userId:'pantry@train.in', userName:'Pantry Coord.', trainNo:'12635',
-      trainName:'Vaigai Express', currentLocation:'Tiruchirappalli', eta:'16:00',
-      items:[{id:'juc',name:'Juice',qty:5,price:40},{id:'bsc',name:'Biscuits',qty:4,price:30}],
-      total:320, status:'accepted', createdAt:new Date(Date.now()-2*3600000).toISOString(),
-      assignedCrew:'crew1', paymentScreenshot:null },
-    { id:'ORD003', userId:'user2@gmail.com', userName:'Kavitha M', trainNo:'22625',
-      trainName:'Double Decker', currentLocation:'Dindigul', eta:'13:15',
-      items:[{id:'tea',name:'Tea / Coffee',qty:6,price:20},{id:'sna',name:'Sandwich',qty:2,price:80}],
-      total:280, status:'completed', createdAt:new Date(Date.now()-5*3600000).toISOString(),
-      assignedCrew:'crew2', paymentScreenshot:'uploaded',
-      completedAt:new Date(Date.now()-4*3600000).toISOString() },
-  ]);
+async function loadCrew() {
+  try { crewList = await apiFetch('/users/crew'); }
+  catch { crewList = []; }
+}
+
+function crewById(crewId) {
+  return crewList.find(c => c.crewId === crewId) || null;
 }
 
 /* ═══════════════════════════════════════
-   AUTH HELPERS
+   AUTH HELPERS (UI only — no change)
 ═══════════════════════════════════════ */
 function setRole(role) {
   currentRole = role;
@@ -736,56 +715,68 @@ function setAuthMode(mode) {
   document.getElementById('pane-signup').classList.toggle('active', mode === 'signup');
 }
 
-function signupAs() {
+/* ═══════════════════════════════════════
+   SIGN UP
+═══════════════════════════════════════ */
+async function signupAs() {
   const fname = document.getElementById('u-fname').value.trim();
   const lname = document.getElementById('u-lname').value.trim();
   const email = document.getElementById('u-semail').value.trim();
   const pass  = document.getElementById('u-spass').value;
-  const role  = document.getElementById('u-srole').value;
+  const role  = document.getElementById('u-srole').value.toUpperCase();
   if (!fname || !email || !pass) { toast('Fill in all required fields', 'err'); return; }
   if (pass.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
-  const users = getUsers();
-  if (users.find(u => u.email === email)) { toast('An account with this email already exists', 'err'); return; }
-  const name = (fname + ' ' + lname).trim();
-  users.push({ email, name, role, createdAt: new Date().toISOString() });
-  setUsers(users);
-  currentUser = { id: email, name, role, email };
-  seedOrders(); launchApp();
-  toast('Account created successfully!', 'ok');
+  try {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ firstName: fname, lastName: lname, email, password: pass, role })
+    });
+    currentUser = data;
+    await loadCrew();
+    launchApp();
+    toast('Account created successfully!', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
 }
 
-function loginAs(role) {
-  if (role === 'user') {
-    const email = document.getElementById('u-email').value.trim();
-    const pass  = document.getElementById('u-pass').value;
-    if (!email || !pass) { toast('Enter your email and password', 'err'); return; }
-    const users = getUsers();
-    const found = users.find(u => u.email === email);
-    if (!found) {
-      /* Auto-register on first sign-in for backwards compat */
-      users.push({ email, name: email.split('@')[0], role: 'user', createdAt: new Date().toISOString() });
-      setUsers(users);
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+async function loginAs(role) {
+  try {
+    if (role === 'user' || role === 'admin') {
+      const emailId = role === 'user' ? 'u-email'  : 'a-email';
+      const passId  = role === 'user' ? 'u-pass'   : 'a-pass';
+      const email = document.getElementById(emailId).value.trim();
+      const pass  = document.getElementById(passId).value;
+      if (!email || !pass) { toast('Enter your email and password', 'err'); return; }
+      const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password: pass })
+      });
+      currentUser = data;
+    } else {
+      const crewId = document.getElementById('c-id').value;
+      const pin    = document.getElementById('c-pin').value;
+      if (!crewId || pin.length < 4) { toast('Select your profile and enter 4-digit PIN', 'err'); return; }
+      const data = await apiFetch('/auth/crew-login', {
+        method: 'POST',
+        body: JSON.stringify({ crewId, pin })
+      });
+      currentUser = data;
     }
-    currentUser = { id: email, name: found ? found.name : email.split('@')[0], role: found ? found.role : 'user', email };
-  } else if (role === 'crew') {
-    const id  = document.getElementById('c-id').value;
-    const pin = document.getElementById('c-pin').value;
-    if (!id || pin.length < 4) { toast('Select your profile and enter 4-digit PIN', 'err'); return; }
-    const m = CREW_MEMBERS.find(c => c.id === id);
-    currentUser = { id, name: m.name, role: 'crew', email: id + '@crew.ts' };
-  } else {
-    const email = document.getElementById('a-email').value.trim();
-    const pass  = document.getElementById('a-pass').value;
-    if (!email || !pass) { toast('Enter admin credentials', 'err'); return; }
-    currentUser = { id: 'admin', name: 'Administrator', role: 'admin', email };
-  }
-  seedOrders(); launchApp();
+    await loadCrew();
+    launchApp();
+  } catch (e) { toast(e.message || 'Login failed', 'err'); }
 }
 
-function logout() {
+/* ═══════════════════════════════════════
+   LOGOUT
+═══════════════════════════════════════ */
+async function logout() {
   clearTimers();
   document.getElementById('popup-reminder').classList.add('hidden');
-  currentUser = null; currentPage = null;
+  try { await apiFetch('/users/logout', { method: 'POST' }); } catch {}
+  currentUser = null; currentPage = null; crewList = [];
   document.getElementById('auth-page').classList.remove('hidden');
   document.getElementById('app').classList.add('hidden');
 }
@@ -803,6 +794,7 @@ const ICONS = {
   users:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
   chart:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
   inbox:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>`,
+  log:     `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
 };
 
 const NAV = {
@@ -823,6 +815,7 @@ const NAV = {
     { id:'crew-mgmt',     label:'Crew',           icon:'users' },
     { id:'analytics',     label:'Analytics',      icon:'chart' },
     { id:'users-page',    label:'Users',          icon:'users' },
+    { id:'audit-logs',    label:'Audit Logs',     icon:'log'   },
   ],
 };
 
@@ -830,13 +823,15 @@ function launchApp() {
   document.getElementById('auth-page').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('topbar-user').textContent = currentUser.name;
-  document.getElementById('topbar-role-tag').textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+  const r = currentUser.role;
+  document.getElementById('topbar-role-tag').textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
   buildNav();
-  navigateTo(NAV[currentUser.role][0].id);
+  navigateTo(NAV[currentUser.role.toLowerCase()]?.[0]?.id || 'place-order');
 }
 
 function buildNav() {
-  const items = NAV[currentUser.role];
+  const role  = currentUser.role.toLowerCase();
+  const items = NAV[role] || NAV.user;
   const sb = document.getElementById('sidebar');
   const mn = document.getElementById('mob-nav');
   sb.innerHTML = ''; mn.innerHTML = '';
@@ -856,7 +851,7 @@ function navigateTo(page) {
   document.getElementById('si-'+page)?.classList.add('active');
   document.getElementById('mi-'+page)?.classList.add('active');
   const mc = document.getElementById('main-content');
-  mc.innerHTML = '';
+  mc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Loading…</div>';
   ({
     'place-order':    renderPlaceOrder,
     'my-orders':      renderMyOrders,
@@ -868,11 +863,12 @@ function navigateTo(page) {
     'crew-mgmt':      renderCrewMgmt,
     'analytics':      renderAnalytics,
     'users-page':     renderUsers,
+    'audit-logs':     renderAuditLogs,
   })[page]?.(mc);
 }
 
 /* ═══════════════════════════════════════
-   ETA INPUT — native time, display AM/PM
+   ETA INPUT (unchanged)
 ═══════════════════════════════════════ */
 function etaHTML() {
   return `<div class="eta-wrap">
@@ -881,10 +877,9 @@ function etaHTML() {
   </div>`;
 }
 function updateAmPm() {
-  const v = document.getElementById('po-eta')?.value; // "HH:MM" 24h
+  const v = document.getElementById('po-eta')?.value;
   if (!v) { document.getElementById('eta-ampm').textContent = '--'; return; }
-  const h = parseInt(v.split(':')[0]);
-  document.getElementById('eta-ampm').textContent = h >= 12 ? 'PM' : 'AM';
+  document.getElementById('eta-ampm').textContent = parseInt(v.split(':')[0]) >= 12 ? 'PM' : 'AM';
 }
 function getEta() {
   const v = document.getElementById('po-eta')?.value;
@@ -902,64 +897,39 @@ function renderPlaceOrder(el) {
   orderCart = {};
   el.innerHTML = `
     <div class="page-header">
-      <div>
-        <div class="section-title">New Order</div>
-        <div class="section-sub">Fill in train details and select items below.</div>
-      </div>
+      <div><div class="section-title">New Order</div>
+      <div class="section-sub">Fill in train details and select items below.</div></div>
     </div>
-
     <div class="card mb-16">
-      <div class="card-header">
-        <div class="card-title">Train & Passenger Details</div>
+      <div class="card-header"><div class="card-title">Train & Passenger Details</div></div>
+      <div class="form-row">
+        <div class="form-group"><label>Passenger Name</label>
+          <input type="text" id="po-name" placeholder="Full name" value="${currentUser.name}"></div>
+        <div class="form-group"><label>Train Number</label>
+          <input type="text" id="po-trainno" placeholder="e.g. 12631" inputmode="numeric"></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Passenger Name</label>
-          <input type="text" id="po-name" placeholder="Full name" value="${currentUser.name}">
-        </div>
-        <div class="form-group">
-          <label>Train Number</label>
-          <input type="text" id="po-trainno" placeholder="e.g. 12631" inputmode="numeric">
-        </div>
+        <div class="form-group"><label>Train Name</label>
+          <input type="text" id="po-trainname" placeholder="e.g. Nellai Express"></div>
+        <div class="form-group"><label>Current Location of Train</label>
+          <input type="text" id="po-location" placeholder="e.g. Madurai Jn"></div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Train Name</label>
-          <input type="text" id="po-trainname" placeholder="e.g. Nellai Express">
-        </div>
-        <div class="form-group">
-          <label>Current Location of Train</label>
-          <input type="text" id="po-location" placeholder="e.g. Madurai Jn">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Expected Arrival Time at Delivery Station</label>
-        ${etaHTML()}
-      </div>
+      <div class="form-group"><label>Expected Arrival Time at Delivery Station</label>${etaHTML()}</div>
     </div>
-
     <div class="card mb-16">
-      <div class="card-header">
-        <div class="card-title">Select Items</div>
-        <div class="card-subtitle">Tap an item to add it to your order</div>
-      </div>
+      <div class="card-header"><div class="card-title">Select Items</div>
+        <div class="card-subtitle">Tap an item to add it to your order</div></div>
       <div class="product-grid" id="product-grid"></div>
     </div>
-
     <div class="card" id="summary-card">
-      <div class="card-header">
-        <div class="card-title">Order Summary</div>
-      </div>
-      <div id="summary-body">
-        <p class="muted small">No items selected yet.</p>
-      </div>
+      <div class="card-header"><div class="card-title">Order Summary</div></div>
+      <div id="summary-body"><p class="muted small">No items selected yet.</p></div>
       <div class="divider"></div>
       <div class="flex jc-sb" style="font-size:16px;font-weight:700" id="total-row">
         <span>Total</span><span>₹0</span>
       </div>
       <button class="btn btn-primary btn-full mt-16" id="submit-btn" onclick="submitOrder()">Place Order</button>
-    </div>
-  `;
+    </div>`;
   buildProductGrid();
 }
 
@@ -996,11 +966,7 @@ function refreshSummary() {
   const body = document.getElementById('summary-body');
   const totalEl = document.getElementById('total-row');
   const ids = Object.keys(orderCart);
-  if (!ids.length) {
-    body.innerHTML = '<p class="muted small">No items selected yet.</p>';
-    totalEl.lastElementChild.textContent = '₹0';
-    return;
-  }
+  if (!ids.length) { body.innerHTML = '<p class="muted small">No items selected yet.</p>'; totalEl.lastElementChild.textContent = '₹0'; return; }
   let total = 0, rows = '';
   ids.forEach(id => {
     const p = PRODUCTS.find(x => x.id === id), qty = orderCart[id], sub = p.price * qty;
@@ -1011,7 +977,7 @@ function refreshSummary() {
   totalEl.lastElementChild.textContent = '₹' + total;
 }
 
-function submitOrder() {
+async function submitOrder() {
   const name   = document.getElementById('po-name')?.value.trim();
   const tno    = document.getElementById('po-trainno')?.value.trim();
   const tname  = document.getElementById('po-trainname')?.value.trim();
@@ -1020,95 +986,108 @@ function submitOrder() {
   if (!name || !tno || !tname || !loc) { toast('Please fill in all train details', 'err'); return; }
   if (!eta) { toast('Please select the expected arrival time', 'err'); return; }
   if (!Object.keys(orderCart).length) { toast('Select at least one item', 'err'); return; }
+
   const items = Object.keys(orderCart).map(id => {
     const p = PRODUCTS.find(x => x.id === id);
-    return { id, name: p.name, qty: orderCart[id], price: p.price };
+    return { productId: id, name: p.name, qty: orderCart[id], price: p.price };
   });
-  const total = items.reduce((s,i) => s + i.price * i.qty, 0);
-  const o = {
-    id: 'ORD' + Date.now().toString().slice(-6),
-    userId: currentUser.id, userName: name, trainNo: tno, trainName: tname,
-    currentLocation: loc, eta, items, total,
-    status: 'pending', createdAt: new Date().toISOString(),
-    assignedCrew: null, paymentScreenshot: null,
-  };
-  const orders = getOrders(); orders.unshift(o); setOrders(orders);
-  CREW_MEMBERS.forEach(c => pushNotif(c.id, `New order ${o.id} from ${name} — Train ${tno} · ETA ${eta}`));
-  pushNotif('admin', `New order ${o.id} placed by ${name} · ETA ${eta} · Amount ₹${total}`);
-  toast('Order placed — ID: ' + o.id, 'ok');
-  orderCart = {};
-  navigateTo(currentUser.role === 'admin' ? 'all-orders' : 'my-orders');
+
+  try {
+    document.getElementById('submit-btn').disabled = true;
+    const order = await apiFetch('/orders', {
+      method: 'POST',
+      body: JSON.stringify({ userName: name, trainNo: tno, trainName: tname, currentLocation: loc, eta, items })
+    });
+    toast('Order placed — ID: ' + order.id, 'ok');
+    orderCart = {};
+    const role = currentUser.role.toLowerCase();
+    navigateTo(role === 'admin' ? 'all-orders' : 'my-orders');
+  } catch (e) {
+    toast(e.message || 'Failed to place order', 'err');
+    document.getElementById('submit-btn').disabled = false;
+  }
 }
 
 /* ═══════════════════════════════════════
    PAGES
 ═══════════════════════════════════════ */
-function renderMyOrders(el) {
-  const orders = getOrders().filter(o => o.userId === currentUser.id);
-  el.innerHTML = `<div class="page-header">
-    <div><div class="section-title">My Orders</div></div>
-    <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
-  </div>`;
-  if (!orders.length) { el.appendChild(emptyState('No orders placed yet.')); return; }
-  orders.forEach(o => el.appendChild(orderCard(o, 'user')));
+async function renderMyOrders(el) {
+  try {
+    const orders = await apiFetch('/orders/my');
+    el.innerHTML = `<div class="page-header">
+      <div><div class="section-title">My Orders</div></div>
+      <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
+    </div>`;
+    if (!orders.length) { el.appendChild(emptyState('No orders placed yet.')); return; }
+    orders.forEach(o => el.appendChild(orderCard(o, 'user')));
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
 
-function renderPendingOrders(el) {
-  const orders = getOrders().filter(o =>
-    o.status === 'pending' || (o.status === 'accepted' && o.assignedCrew === currentUser.id)
-  );
-  el.innerHTML = `<div class="page-header"><div><div class="section-title">Incoming Orders</div><div class="section-sub">Accept an order to begin delivery</div></div></div>`;
-  if (!orders.length) { el.appendChild(emptyState('No pending orders at this time.')); return; }
-  orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+async function renderPendingOrders(el) {
+  try {
+    const orders = await apiFetch('/orders/pending');
+    el.innerHTML = `<div class="page-header"><div><div class="section-title">Incoming Orders</div>
+      <div class="section-sub">Accept an order to begin delivery</div></div></div>`;
+    if (!orders.length) { el.appendChild(emptyState('No pending orders at this time.')); return; }
+    orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
 
-function renderMyDeliveries(el) {
-  const orders = getOrders().filter(o => o.assignedCrew === currentUser.id);
-  el.innerHTML = `<div class="page-header"><div><div class="section-title">My Deliveries</div></div></div>`;
-  if (!orders.length) { el.appendChild(emptyState('No deliveries assigned yet.')); return; }
-  orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+async function renderMyDeliveries(el) {
+  try {
+    const orders = await apiFetch('/orders/deliveries');
+    el.innerHTML = `<div class="page-header"><div><div class="section-title">My Deliveries</div></div></div>`;
+    if (!orders.length) { el.appendChild(emptyState('No deliveries assigned yet.')); return; }
+    orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
 
-function renderNotifications(el) {
-  const notifs = getNotifs(currentUser.id);
-  el.innerHTML = `<div class="page-header">
-    <div><div class="section-title">Notifications</div></div>
-    <button class="btn btn-outline btn-sm" onclick="markRead()">Mark all read</button>
-  </div>
-  <div class="card">
-    <div id="notif-list">
-      ${!notifs.length
-        ? '<p class="muted small tc" style="padding:24px 0">No notifications.</p>'
-        : notifs.map(n => `<div class="notif-item${n.read?'':' unread'}">
-            <div class="notif-msg">${n.msg}</div>
-            <div class="notif-ts">${fmt(n.time)}</div>
-          </div>`).join('')}
+async function renderNotifications(el) {
+  try {
+    const notifs = await apiFetch('/notifications');
+    el.innerHTML = `<div class="page-header">
+      <div><div class="section-title">Notifications</div></div>
+      <button class="btn btn-outline btn-sm" onclick="markRead()">Mark all read</button>
     </div>
-  </div>`;
+    <div class="card">
+      <div id="notif-list">
+        ${!notifs.length
+          ? '<p class="muted small tc" style="padding:24px 0">No notifications.</p>'
+          : notifs.map(n => `<div class="notif-item${n.read?'':' unread'}">
+              <div class="notif-msg">${n.message}</div>
+              <div class="notif-ts">${fmt(n.time)}</div>
+            </div>`).join('')}
+      </div>
+    </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
-function markRead() {
-  setNotifs(currentUser.id, getNotifs(currentUser.id).map(n => ({...n, read:true})));
-  navigateTo('notifications');
+
+async function markRead() {
+  try {
+    await apiFetch('/notifications/mark-read', { method: 'PATCH' });
+    navigateTo('notifications');
+  } catch {}
 }
 
 /* ─── Admin pages ─── */
-function renderDashboard(el) {
-  const orders = getOrders();
-  const pending  = orders.filter(o => o.status === 'pending').length;
-  const active   = orders.filter(o => o.status === 'accepted').length;
-  const done     = orders.filter(o => o.status === 'completed').length;
-  const revenue  = orders.filter(o => o.status === 'completed').reduce((s,o) => s+o.total, 0);
-  el.innerHTML = `
-    <div class="page-header"><div><div class="section-title">Dashboard</div><div class="section-sub">${fmt(new Date().toISOString())}</div></div></div>
-    <div class="stats-grid mb-16">
-      <div class="stat-card"><div class="stat-val">${orders.length}</div><div class="stat-label">Total Orders</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${pending}</div><div class="stat-label">Pending</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${active}</div><div class="stat-label">In Progress</div></div>
-      <div class="stat-card"><div class="stat-val" style="color:var(--green)">${done}</div><div class="stat-label">Completed</div></div>
-      <div class="stat-card"><div class="stat-val">₹${revenue}</div><div class="stat-label">Revenue</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
-      <div class="card" style="grid-column:1/-1">
+async function renderDashboard(el) {
+  try {
+    const [stats, orders, crew] = await Promise.all([
+      apiFetch('/orders/stats'),
+      apiFetch('/orders/all'),
+      apiFetch('/users/crew'),
+    ]);
+    el.innerHTML = `
+      <div class="page-header"><div><div class="section-title">Dashboard</div>
+        <div class="section-sub">${fmt(new Date().toISOString())}</div></div></div>
+      <div class="stats-grid mb-16">
+        <div class="stat-card"><div class="stat-val">${stats.totalOrders}</div><div class="stat-label">Total Orders</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${stats.pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${stats.accepted}</div><div class="stat-label">In Progress</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--green)">${stats.completed}</div><div class="stat-label">Completed</div></div>
+        <div class="stat-card"><div class="stat-val">₹${stats.revenue}</div><div class="stat-label">Revenue</div></div>
+      </div>
+      <div class="card mb-16">
         <div class="card-header"><div class="card-title">Recent Orders</div></div>
         ${orders.slice(0,5).map(o => `
           <div class="flex jc-sb items-c" style="padding:10px 0;border-bottom:1px solid var(--border)">
@@ -1116,174 +1095,275 @@ function renderDashboard(el) {
               <div style="font-size:13px;font-weight:600">${o.id} <span style="font-weight:400;color:var(--text-muted)">— ${o.trainName}</span></div>
               <div style="font-size:11px;color:var(--text-muted)">${o.userName} · ETA ${o.eta}</div>
             </div>
-            <span class="badge badge-${o.status}">${o.status}</span>
+            <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
           </div>`).join('')}
         <button class="btn btn-outline btn-sm mt-12" onclick="navigateTo('all-orders')">View all orders</button>
       </div>
-    </div>
-    <div class="card mt-16">
-      <div class="card-header"><div class="card-title">Crew Overview</div></div>
-      ${CREW_MEMBERS.map(c => {
-        const a = orders.filter(o => o.assignedCrew===c.id && o.status==='accepted').length;
-        return `<div class="crew-card">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Crew Overview</div></div>
+        ${crew.map(c => {
+          const active = orders.filter(o => o.assignedCrewId === c.crewId && o.status === 'ACCEPTED').length;
+          return `<div class="crew-card">
+            <div class="flex items-c gap-12">
+              <div class="crew-avatar">${c.initials||c.name[0]}</div>
+              <div><div class="crew-name">${c.name}</div><div class="crew-meta">${active} active order${active!==1?'s':''}</div></div>
+            </div>
+            <span style="font-size:12px;color:${c.online?'var(--green)':'var(--text-muted)'}">
+              <span class="${c.online?'online-dot':'offline-dot'}"></span>${c.online?'Online':'Offline'}
+            </span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderAllOrders(el) {
+  try {
+    let orders = await apiFetch('/orders/all');
+    let fs = 'all';
+    const draw = () => {
+      const list = fs === 'all' ? orders : orders.filter(o => o.status.toLowerCase() === fs);
+      el.innerHTML = `
+        <div class="page-header">
+          <div><div class="section-title">All Orders</div></div>
+          <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
+        </div>
+        <div class="flex gap-8 mb-16" style="flex-wrap:wrap">
+          ${['all','pending','accepted','completed'].map(s =>
+            `<button class="btn btn-sm ${fs===s?'btn-primary':'btn-outline'}" onclick="__fs('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
+          ).join('')}
+        </div>
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>ID</th><th>Customer</th><th>Train</th><th>ETA</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${list.map(o => `<tr>
+                <td style="font-weight:600">${o.id}</td>
+                <td>${o.userName}</td>
+                <td>${o.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${o.trainName}</span></td>
+                <td>${o.eta}</td>
+                <td>₹${o.total}</td>
+                <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
+                <td>
+                  ${o.status==='PENDING'?`<button class="btn btn-outline btn-xs" onclick="openAssign('${o.id}')">Assign</button> `:''}
+                  <button class="btn btn-outline btn-xs" onclick="openDetail('${o.id}')">View</button>
+                </td>
+              </tr>`).join('')}
+              ${!list.length?`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No orders found.</td></tr>`:''}
+            </tbody>
+          </table>
+        </div>`;
+      window.__fs = s => { fs = s; draw(); };
+    };
+    draw();
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderCrewMgmt(el) {
+  try {
+    const [crew, orders] = await Promise.all([apiFetch('/users/crew'), apiFetch('/orders/all')]);
+    el.innerHTML = `<div class="page-header"><div><div class="section-title">Crew Management</div></div></div>`;
+    crew.forEach(c => {
+      const co   = orders.filter(o => o.assignedCrewId === c.crewId);
+      const done = co.filter(o => o.status === 'COMPLETED').length;
+      const act  = co.filter(o => o.status === 'ACCEPTED').length;
+      const rev  = co.filter(o => o.status === 'COMPLETED').reduce((s,o) => s + o.total, 0);
+      const d = document.createElement('div');
+      d.className = 'card mb-12';
+      d.innerHTML = `
+        <div class="flex jc-sb items-c mb-12">
           <div class="flex items-c gap-12">
-            <div class="crew-avatar">${c.initials}</div>
-            <div><div class="crew-name">${c.name}</div><div class="crew-meta">${a} active order${a!==1?'s':''}</div></div>
+            <div class="crew-avatar">${c.initials||c.name[0]}</div>
+            <div><div class="crew-name">${c.name}</div><div class="crew-meta">${c.crewId}</div></div>
           </div>
           <span style="font-size:12px;color:${c.online?'var(--green)':'var(--text-muted)'}">
             <span class="${c.online?'online-dot':'offline-dot'}"></span>${c.online?'Online':'Offline'}
           </span>
+        </div>
+        <div class="divider"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px">
+          <div><div style="font-size:18px;font-weight:700">${done}</div><div class="small muted">Completed</div></div>
+          <div><div style="font-size:18px;font-weight:700">${act}</div><div class="small muted">Active</div></div>
+          <div><div style="font-size:18px;font-weight:700">${co.length}</div><div class="small muted">Total</div></div>
+          <div><div style="font-size:18px;font-weight:700">₹${rev}</div><div class="small muted">Revenue</div></div>
         </div>`;
-      }).join('')}
-    </div>`;
+      el.appendChild(d);
+    });
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
 
-function renderAllOrders(el) {
-  const orders = getOrders();
-  let fs = 'all';
-  const draw = () => {
-    const list = fs==='all' ? orders : orders.filter(o => o.status===fs);
+async function renderAnalytics(el) {
+  try {
+    const orders = await apiFetch('/orders/all');
+    const crew   = await apiFetch('/users/crew');
+    const done   = orders.filter(o => o.status === 'COMPLETED');
+    const rev    = done.reduce((s,o) => s + o.total, 0);
+    const avg    = done.length ? Math.round(rev / done.length) : 0;
+    const ic = {};
+    orders.forEach(o => o.items.forEach(i => { ic[i.name] = (ic[i.name]||0) + i.qty; }));
+    const top = Object.entries(ic).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const mx  = top[0]?.[1]||1;
+    const cs  = crew.map(c => ({
+      n: c.name.split(' ')[0],
+      v: orders.filter(o => o.assignedCrewId === c.crewId && o.status === 'COMPLETED').length
+    }));
+    const mcv = Math.max(...cs.map(c=>c.v), 1);
     el.innerHTML = `
-      <div class="page-header">
-        <div><div class="section-title">All Orders</div></div>
-        <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
+      <div class="page-header"><div><div class="section-title">Analytics</div></div></div>
+      <div class="stats-grid mb-16">
+        <div class="stat-card"><div class="stat-val">₹${rev}</div><div class="stat-label">Total Revenue</div></div>
+        <div class="stat-card"><div class="stat-val">${done.length}</div><div class="stat-label">Fulfilled</div></div>
+        <div class="stat-card"><div class="stat-val">₹${avg}</div><div class="stat-label">Avg Order</div></div>
+        <div class="stat-card"><div class="stat-val">${orders.length}</div><div class="stat-label">Total Orders</div></div>
       </div>
-      <div class="flex gap-8 mb-16" style="flex-wrap:wrap">
-        ${['all','pending','accepted','completed'].map(s =>
-          `<button class="btn btn-sm ${fs===s?'btn-primary':'btn-outline'}" onclick="__fs('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
-        ).join('')}
+      <div class="card mb-16">
+        <div class="card-header"><div class="card-title">Top Items Ordered</div></div>
+        <div class="chart-wrap">
+          ${top.map(([n,v]) => `<div class="bar-col">
+            <div class="bar" style="height:${Math.round(v/mx*100)}px"><span class="bar-count">${v}</span></div>
+            <div class="bar-lbl">${n.split(' ')[0]}</div>
+          </div>`).join('')}
+        </div>
       </div>
+      <div class="card mb-16">
+        <div class="card-header"><div class="card-title">Crew Deliveries Completed</div></div>
+        <div class="chart-wrap">
+          ${cs.map(c => `<div class="bar-col">
+            <div class="bar" style="height:${Math.round(c.v/mcv*100)}px;opacity:.6"><span class="bar-count">${c.v}</span></div>
+            <div class="bar-lbl">${c.n}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Order Status Breakdown</div></div>
+        ${['PENDING','ACCEPTED','COMPLETED'].map(s => {
+          const cnt = orders.filter(o => o.status === s).length;
+          const pct = orders.length ? Math.round(cnt/orders.length*100) : 0;
+          return `<div style="margin-bottom:14px">
+            <div class="flex jc-sb mb-4">
+              <span style="font-size:13px;font-weight:500">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
+              <span style="font-size:13px;color:var(--text-muted)">${cnt} orders · ${pct}%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderUsers(el) {
+  try {
+    const users = await apiFetch('/users/all');
+    el.innerHTML = `
+      <div class="page-header"><div><div class="section-title">Registered Users</div></div></div>
       <div class="card table-scroll" style="padding:0;overflow:hidden">
         <table class="dt">
-          <thead><tr><th>ID</th><th>Customer</th><th>Train</th><th>ETA</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
           <tbody>
-            ${list.map(o => `<tr>
-              <td style="font-weight:600">${o.id}</td>
-              <td>${o.userName}</td>
-              <td>${o.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${o.trainName}</span></td>
-              <td>${o.eta}</td>
-              <td>₹${o.total}</td>
-              <td><span class="badge badge-${o.status}">${o.status}</span></td>
-              <td>
-                ${o.status==='pending'?`<button class="btn btn-outline btn-xs" onclick="openAssign('${o.id}')">Assign</button> `:''}
-                <button class="btn btn-outline btn-xs" onclick="openDetail('${o.id}')">View</button>
-              </td>
-            </tr>`).join('')}
-            ${!list.length?`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No orders found.</td></tr>`:''}
+            ${!users.length
+              ? '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">No users yet.</td></tr>'
+              : users.map(u => `<tr>
+                  <td style="font-weight:500">${u.name}</td>
+                  <td>${u.email}</td>
+                  <td><span class="badge badge-accepted">${u.role}</span></td>
+                </tr>`).join('')}
           </tbody>
         </table>
       </div>`;
-    window.__fs = s => { fs=s; draw(); };
-  };
-  draw();
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
 
-function renderCrewMgmt(el) {
-  const orders = getOrders();
-  el.innerHTML = `<div class="page-header"><div><div class="section-title">Crew Management</div></div></div>`;
-  CREW_MEMBERS.forEach(c => {
-    const co = orders.filter(o => o.assignedCrew===c.id);
-    const done = co.filter(o => o.status==='completed').length;
-    const act  = co.filter(o => o.status==='accepted').length;
-    const rev  = co.filter(o => o.status==='completed').reduce((s,o) => s+o.total, 0);
-    const d = document.createElement('div');
-    d.className = 'card mb-12';
-    d.innerHTML = `
-      <div class="flex jc-sb items-c mb-12">
-        <div class="flex items-c gap-12">
-          <div class="crew-avatar">${c.initials}</div>
-          <div><div class="crew-name">${c.name}</div><div class="crew-meta">${c.id}</div></div>
+/* ── ADMIN: AUDIT LOGS PAGE ────────────────────────────────── */
+async function renderAuditLogs(el) {
+  try {
+    const [logs, dlogs, payments] = await Promise.all([
+      apiFetch('/orders/admin/logs'),
+      apiFetch('/orders/admin/delivery-logs'),
+      apiFetch('/orders/admin/payments'),
+    ]);
+
+    let tab = 'events';
+    const draw = () => {
+      el.innerHTML = `
+        <div class="page-header"><div><div class="section-title">Audit Logs</div>
+          <div class="section-sub">All events, delivery timelines and payment records — admin only</div></div>
         </div>
-        <span style="font-size:12px;color:${c.online?'var(--green)':'var(--text-muted)'}">
-          <span class="${c.online?'online-dot':'offline-dot'}"></span>${c.online?'Online':'Offline'}
-        </span>
-      </div>
-      <div class="divider"></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px">
-        <div><div style="font-size:18px;font-weight:700">${done}</div><div class="small muted">Completed</div></div>
-        <div><div style="font-size:18px;font-weight:700">${act}</div><div class="small muted">Active</div></div>
-        <div><div style="font-size:18px;font-weight:700">${co.length}</div><div class="small muted">Total</div></div>
-        <div><div style="font-size:18px;font-weight:700">₹${rev}</div><div class="small muted">Revenue</div></div>
-      </div>`;
-    el.appendChild(d);
-  });
+        <div class="flex gap-8 mb-16">
+          ${['events','delivery','payments'].map(t =>
+            `<button class="btn btn-sm ${tab===t?'btn-primary':'btn-outline'}" onclick="__tab('${t}')">${{events:'Order Events',delivery:'Delivery Timeline',payments:'Payment Records'}[t]}</button>`
+          ).join('')}
+        </div>
+
+        ${tab === 'events' ? `
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>Time</th><th>Order</th><th>Event</th><th>Performed By</th><th>Note</th></tr></thead>
+            <tbody>
+              ${!logs.length ? `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No events yet.</td></tr>` :
+                logs.map(l => `<tr>
+                  <td style="white-space:nowrap;font-size:11px">${fmt(l.eventTime)}</td>
+                  <td style="font-weight:600">${l.orderId}</td>
+                  <td><span class="badge ${l.event==='COMPLETED'?'badge-completed':l.event==='ACCEPTED'?'badge-accepted':l.event==='PLACED'?'badge-pending':'badge-cancelled'}">${l.event}</span></td>
+                  <td>${l.performedBy||'—'}</td>
+                  <td style="font-size:12px;color:var(--text-muted)">${l.note||'—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+
+        ${tab === 'delivery' ? `
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>Order</th><th>Train</th><th>ETA Given</th><th>Placed At</th><th>Accepted At</th><th>Delivered At</th><th>Accept Time</th><th>Delivery Time</th></tr></thead>
+            <tbody>
+              ${!dlogs.length ? `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No delivery logs yet.</td></tr>` :
+                dlogs.map(d => `<tr>
+                  <td style="font-weight:600">${d.orderId}</td>
+                  <td>${d.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${d.trainName}</span></td>
+                  <td>${d.etaGiven||'—'}</td>
+                  <td style="font-size:12px">${fmt(d.placedAt)}</td>
+                  <td style="font-size:12px">${d.acceptedAt ? fmt(d.acceptedAt) : '—'}</td>
+                  <td style="font-size:12px">${d.deliveredAt ? fmt(d.deliveredAt) : '—'}</td>
+                  <td>${d.acceptanceDurationSeconds != null ? Math.round(d.acceptanceDurationSeconds/60) + ' min' : '—'}</td>
+                  <td>${d.deliveryDurationSeconds != null ? Math.round(d.deliveryDurationSeconds/60) + ' min' : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+
+        ${tab === 'payments' ? `
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>Order</th><th>Amount Paid</th><th>Uploaded By</th><th>File</th><th>Uploaded At</th><th>Screenshot</th></tr></thead>
+            <tbody>
+              ${!payments.length ? `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No payment records yet.</td></tr>` :
+                payments.map(p => `<tr>
+                  <td style="font-weight:600">${p.orderId}</td>
+                  <td>₹${p.amountPaid}</td>
+                  <td>${p.uploadedBy}</td>
+                  <td style="font-size:12px;color:var(--text-muted)">${p.fileName||'—'}</td>
+                  <td style="font-size:12px">${fmt(p.uploadedAt)}</td>
+                  <td>${p.screenshotBase64
+                    ? `<img src="${p.screenshotBase64.startsWith('data:') ? p.screenshotBase64 : 'data:image/jpeg;base64,'+p.screenshotBase64}"
+                            style="max-width:80px;max-height:60px;border-radius:4px;border:1px solid var(--border);cursor:pointer"
+                            onclick="viewFullImage(this.src)">`
+                    : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}`;
+
+      window.__tab = t => { tab = t; draw(); };
+    };
+    draw();
+  } catch (e) { el.innerHTML = errState(e.message); }
 }
 
-function renderAnalytics(el) {
-  const orders = getOrders();
-  const done   = orders.filter(o => o.status==='completed');
-  const rev    = done.reduce((s,o) => s+o.total, 0);
-  const avg    = done.length ? Math.round(rev/done.length) : 0;
-  const ic = {}; orders.forEach(o => o.items.forEach(i => { ic[i.name]=(ic[i.name]||0)+i.qty; }));
-  const top = Object.entries(ic).sort((a,b) => b[1]-a[1]).slice(0,6);
-  const mx  = top[0]?.[1]||1;
-  const cs  = CREW_MEMBERS.map(c => ({ n:c.name.split(' ')[0], v:orders.filter(o => o.assignedCrew===c.id&&o.status==='completed').length }));
-  const mcv = Math.max(...cs.map(c=>c.v),1);
-  el.innerHTML = `
-    <div class="page-header"><div><div class="section-title">Analytics</div></div></div>
-    <div class="stats-grid mb-16">
-      <div class="stat-card"><div class="stat-val">₹${rev}</div><div class="stat-label">Total Revenue</div></div>
-      <div class="stat-card"><div class="stat-val">${done.length}</div><div class="stat-label">Fulfilled</div></div>
-      <div class="stat-card"><div class="stat-val">₹${avg}</div><div class="stat-label">Avg Order</div></div>
-      <div class="stat-card"><div class="stat-val">${orders.length}</div><div class="stat-label">Total Orders</div></div>
-    </div>
-    <div class="card mb-16">
-      <div class="card-header"><div class="card-title">Top Items Ordered</div></div>
-      <div class="chart-wrap">
-        ${top.map(([n,v]) => `<div class="bar-col">
-          <div class="bar" style="height:${Math.round(v/mx*100)}px">
-            <span class="bar-count">${v}</span>
-          </div>
-          <div class="bar-lbl">${n.split(' ')[0]}</div>
-        </div>`).join('')}
-      </div>
-    </div>
-    <div class="card mb-16">
-      <div class="card-header"><div class="card-title">Crew Deliveries Completed</div></div>
-      <div class="chart-wrap">
-        ${cs.map(c => `<div class="bar-col">
-          <div class="bar" style="height:${Math.round(c.v/mcv*100)}px;opacity:.6">
-            <span class="bar-count">${c.v}</span>
-          </div>
-          <div class="bar-lbl">${c.n}</div>
-        </div>`).join('')}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">Order Status Breakdown</div></div>
-      ${['pending','accepted','completed'].map(s => {
-        const cnt = orders.filter(o=>o.status===s).length;
-        const pct = orders.length ? Math.round(cnt/orders.length*100) : 0;
-        return `<div style="margin-bottom:14px">
-          <div class="flex jc-sb mb-4">
-            <span style="font-size:13px;font-weight:500">${s.charAt(0).toUpperCase()+s.slice(1)}</span>
-            <span style="font-size:13px;color:var(--text-muted)">${cnt} orders · ${pct}%</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        </div>`;
-      }).join('')}
-    </div>`;
-}
-
-function renderUsers(el) {
-  const users = getUsers();
-  el.innerHTML = `
-    <div class="page-header"><div><div class="section-title">Registered Users</div></div></div>
-    <div class="card table-scroll" style="padding:0;overflow:hidden">
-      <table class="dt">
-        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
-        <tbody>
-          ${!users.length
-            ? '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px">No users registered yet.</td></tr>'
-            : users.map(u => `<tr>
-                <td style="font-weight:500">${u.name}</td>
-                <td>${u.email}</td>
-                <td><span class="badge badge-accepted">${u.role}</span></td>
-                <td>${fmt(u.createdAt)}</td>
-              </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
+function viewFullImage(src) {
+  openModal(`
+    <div class="modal-title">Payment Screenshot</div>
+    <img src="${src}" style="max-width:100%;border-radius:6px;border:1px solid var(--border)">
+  `);
 }
 
 /* ═══════════════════════════════════════
@@ -1292,26 +1372,24 @@ function renderUsers(el) {
 function orderCard(o, viewer) {
   const d = document.createElement('div');
   d.className = 'order-card';
-  const crew = o.assignedCrew ? CREW_MEMBERS.find(c => c.id===o.assignedCrew) : null;
+  const crew = o.assignedCrewId ? crewById(o.assignedCrewId) : null;
+  const status = o.status?.toLowerCase() || 'pending';
   let actions = '';
   if (viewer === 'crew') {
-    if (o.status === 'pending')
+    if (status === 'pending')
       actions = `<button class="btn btn-green btn-sm" onclick="acceptOrder('${o.id}')">Accept Order</button>`;
-    else if (o.status === 'accepted' && o.assignedCrew === currentUser.id)
+    else if (status === 'accepted' && o.assignedCrewId === currentUser.crewId)
       actions = `<button class="btn btn-primary btn-sm" onclick="openUpload('${o.id}')">Upload Payment</button>`;
   }
   if (viewer === 'admin') {
-    if (o.status === 'pending')
+    if (status === 'pending')
       actions += `<button class="btn btn-outline btn-sm" onclick="openAssign('${o.id}')">Assign Crew</button>`;
     actions += ` <button class="btn btn-outline btn-sm" onclick="openDetail('${o.id}')">View Details</button>`;
   }
   d.innerHTML = `
     <div class="order-card-header">
-      <div>
-        <div class="order-id">${o.id}</div>
-        <div class="order-time">${fmt(o.createdAt)}</div>
-      </div>
-      <span class="badge badge-${o.status}">${o.status}</span>
+      <div><div class="order-id">${o.id}</div><div class="order-time">${fmt(o.createdAt)}</div></div>
+      <span class="badge badge-${status}">${status}</span>
     </div>
     <div class="order-meta">
       <div class="meta-item"><strong>${o.userName}</strong>Customer</div>
@@ -1323,7 +1401,7 @@ function orderCard(o, viewer) {
       ${o.completedAt ? `<div class="meta-item"><strong>${fmt(o.completedAt)}</strong>Completed</div>` : ''}
     </div>
     <div class="order-items-section">
-      ${o.items.map(i => `<div class="item-row"><span>${i.name}</span><span style="color:var(--text-muted)">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
+      ${(o.items||[]).map(i => `<div class="item-row"><span>${i.name}</span><span style="color:var(--text-muted)">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
       <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
     </div>
     ${actions ? `<div class="order-actions">${actions}</div>` : ''}`;
@@ -1333,35 +1411,32 @@ function orderCard(o, viewer) {
 /* ═══════════════════════════════════════
    ACCEPT + REMINDER CYCLE
 ═══════════════════════════════════════ */
-function acceptOrder(oid) {
-  const orders = getOrders(), o = orders.find(x => x.id===oid);
-  if (!o) return;
-  o.status = 'accepted'; o.assignedCrew = currentUser.id; o.acceptedAt = new Date().toISOString();
-  setOrders(orders);
-  pushNotif(currentUser.id, `You accepted order ${oid} (ETA ${o.eta}). Delivery check-ins will follow every 20 minutes.`);
-  startReminders(oid, o.eta);
-  toast('Order accepted. Check-in reminders set.', 'ok');
-  navigateTo('pending-orders');
+async function acceptOrder(oid) {
+  try {
+    await apiFetch('/orders/' + oid + '/accept', { method: 'PATCH' });
+    startReminders(oid);
+    toast('Order accepted. Check-in reminders set.', 'ok');
+    navigateTo('pending-orders');
+  } catch (e) { toast(e.message, 'err'); }
 }
 
-function startReminders(oid, eta) {
+function startReminders(oid) {
   clearTimers();
   let step = 0;
-  const INTERVAL = 20 * 60 * 1000; // 20 min
+  const INTERVAL = 20 * 60 * 1000;
   const tid = setInterval(() => {
     if (step >= REMINDER_STEPS.length) { clearInterval(tid); return; }
-    showReminder(REMINDER_STEPS[step], oid, eta);
+    showReminder(REMINDER_STEPS[step], oid);
     step++;
   }, INTERVAL);
   reminderTimers.push(tid);
 }
 
-function showReminder(s, oid, eta) {
+function showReminder(s, oid) {
   document.getElementById('popup-step').textContent  = s.step;
   document.getElementById('popup-title').textContent = s.title;
-  document.getElementById('popup-body').textContent  = `${s.body}\n\nOrder: ${oid} · ETA ${eta}`;
+  document.getElementById('popup-body').textContent  = s.body + '\n\nOrder: ' + oid;
   document.getElementById('popup-reminder').classList.remove('hidden');
-  pushNotif(currentUser.id, `[Reminder ${s.step}] ${s.title} — Order ${oid} · ETA ${eta}`);
 }
 
 function dismissPopup() {
@@ -1374,7 +1449,7 @@ function clearTimers() {
 }
 
 /* ═══════════════════════════════════════
-   UPLOAD PAYMENT
+   UPLOAD PAYMENT SCREENSHOT
 ═══════════════════════════════════════ */
 function openUpload(oid) {
   openModal(`
@@ -1390,67 +1465,99 @@ function openUpload(oid) {
     <button class="btn btn-green btn-full mt-16" onclick="completeOrder('${oid}')">Mark Order as Completed</button>
   `);
 }
+
+let _uploadedImageBase64 = null;
+let _uploadedFileName    = null;
+
 function previewImg(inp, oid) {
   if (!inp.files[0]) return;
+  const file = inp.files[0];
+  _uploadedFileName = file.name;
   const r = new FileReader();
-  r.onload = e => { document.getElementById('prev-'+oid).innerHTML = `<img src="${e.target.result}" alt="Payment">`; };
-  r.readAsDataURL(inp.files[0]);
+  r.onload = e => {
+    _uploadedImageBase64 = e.target.result;  // full data URL
+    document.getElementById('prev-'+oid).innerHTML =
+      `<img src="${e.target.result}" alt="Payment">`;
+  };
+  r.readAsDataURL(file);
 }
-function completeOrder(oid) {
-  const orders = getOrders(), o = orders.find(x => x.id===oid);
-  if (!o) return;
-  o.status = 'completed'; o.completedAt = new Date().toISOString(); o.paymentScreenshot = 'uploaded';
-  setOrders(orders);
-  pushNotif('admin', `Order ${oid} completed by ${currentUser.name}. Payment received ₹${o.total}. ETA was ${o.eta}.`);
-  pushNotif(currentUser.id, `Order ${oid} completed. Payment screenshot uploaded. Amount ₹${o.total}.`);
-  clearTimers(); dismissPopup();
-  closeModal();
-  toast('Order completed and saved.', 'ok');
-  navigateTo('my-deliveries');
+
+async function completeOrder(oid) {
+  try {
+    // First save the payment screenshot to DB
+    if (_uploadedImageBase64) {
+      await apiFetch('/orders/' + oid + '/payment-screenshot', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          screenshotBase64: _uploadedImageBase64,
+          fileName: _uploadedFileName || 'payment.jpg',
+          amountPaid: 0  // amount is on the order itself
+        })
+      });
+    }
+    // Then mark as completed
+    await apiFetch('/orders/' + oid + '/complete', { method: 'PATCH' });
+    _uploadedImageBase64 = null;
+    _uploadedFileName = null;
+    clearTimers(); dismissPopup(); closeModal();
+    toast('Order completed and saved.', 'ok');
+    navigateTo('my-deliveries');
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 /* ═══════════════════════════════════════
    ADMIN MODALS
 ═══════════════════════════════════════ */
 function openAssign(oid) {
-  const opts = CREW_MEMBERS.map(c =>
-    `<option value="${c.id}">${c.name}${c.online?' (Online)':''}</option>`).join('');
+  const opts = crewList.map(c =>
+    `<option value="${c.crewId}">${c.name}${c.online?' (Online)':''}</option>`).join('');
   openModal(`
     <div class="modal-title">Assign Crew — ${oid}</div>
     <div class="form-group">
       <label>Select crew member</label>
-      <select id="asgn-sel">${opts}</select>
+      <select id="asgn-sel">${opts || '<option value="">No crew available</option>'}</select>
     </div>
     <button class="btn btn-primary btn-full" onclick="doAssign('${oid}')">Confirm Assignment</button>
   `);
 }
-function doAssign(oid) {
+
+async function doAssign(oid) {
   const crewId = document.getElementById('asgn-sel').value;
-  const orders = getOrders(), o = orders.find(x => x.id===oid);
-  if (!o) return;
-  o.status = 'accepted'; o.assignedCrew = crewId; o.acceptedAt = new Date().toISOString();
-  setOrders(orders);
-  pushNotif(crewId, `Order ${oid} has been assigned to you by Admin · ETA ${o.eta}`);
-  closeModal(); toast('Crew assigned.', 'ok'); navigateTo('all-orders');
+  if (!crewId) { toast('Select a crew member', 'err'); return; }
+  try {
+    await apiFetch('/orders/' + oid + '/assign', {
+      method: 'PATCH',
+      body: JSON.stringify({ crewId })
+    });
+    closeModal();
+    toast('Crew assigned.', 'ok');
+    navigateTo('all-orders');
+  } catch (e) { toast(e.message, 'err'); }
 }
-function openDetail(oid) {
-  const o = getOrders().find(x => x.id===oid); if (!o) return;
-  const crew = o.assignedCrew ? CREW_MEMBERS.find(c => c.id===o.assignedCrew) : null;
-  openModal(`
-    <div class="modal-title">Order ${o.id}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      ${[['Customer',o.userName],['Train No.',o.trainNo],['Train Name',o.trainName],
-         ['Location',o.currentLocation],['ETA',o.eta],['Status',o.status],
-         ['Crew',crew?crew.name:'Not assigned'],['Amount','₹'+o.total],
-         ['Placed',fmt(o.createdAt)],['Completed',o.completedAt?fmt(o.completedAt):'—'],
-         ['Payment',o.paymentScreenshot?'Uploaded':'Pending'],
-        ].map(([l,v]) => `<div><div class="small muted">${l}</div><div style="font-weight:500;font-size:13px">${v}</div></div>`).join('')}
-    </div>
-    <div class="divider"></div>
-    <div class="card-title mb-8">Items</div>
-    ${o.items.map(i=>`<div class="item-row"><span>${i.name}</span><span class="muted">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
-    <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
-  `);
+
+async function openDetail(oid) {
+  try {
+    const orders = await apiFetch('/orders/all');
+    const o = orders.find(x => x.id === oid);
+    if (!o) return;
+    const crew = o.assignedCrewId ? crewById(o.assignedCrewId) : null;
+    openModal(`
+      <div class="modal-title">Order ${o.id}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${[['Customer',o.userName],['Train No.',o.trainNo],['Train Name',o.trainName],
+           ['Location',o.currentLocation],['ETA',o.eta],['Status',o.status],
+           ['Crew',crew?crew.name:'Not assigned'],['Amount','₹'+o.total],
+           ['Placed',fmt(o.createdAt)],['Completed',o.completedAt?fmt(o.completedAt):'—'],
+           ['Payment',o.paymentUploaded?'Uploaded':'Pending'],
+           ['Duration', o.deliveryDurationSeconds!=null ? Math.round(o.deliveryDurationSeconds/60)+' min' : '—'],
+          ].map(([l,v]) => `<div><div class="small muted">${l}</div><div style="font-weight:500;font-size:13px">${v}</div></div>`).join('')}
+      </div>
+      <div class="divider"></div>
+      <div class="card-title mb-8">Items</div>
+      ${(o.items||[]).map(i=>`<div class="item-row"><span>${i.name}</span><span class="muted">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
+      <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
+    `);
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 /* ═══════════════════════════════════════
@@ -1461,7 +1568,7 @@ function openModal(html) {
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
-function outsideModal(e) { if (e.target===document.getElementById('modal-overlay')) closeModal(); }
+function outsideModal(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
 
 /* ═══════════════════════════════════════
    TOAST
@@ -1475,13 +1582,19 @@ function toast(msg, type='') {
 }
 
 /* ═══════════════════════════════════════
-   EMPTY STATE
+   EMPTY / ERROR STATE
 ═══════════════════════════════════════ */
 function emptyState(msg) {
   const d = document.createElement('div');
   d.className = 'empty-state';
   d.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><p>${msg}</p>`;
   return d;
+}
+
+function errState(msg) {
+  return `<div class="card" style="color:var(--red);padding:24px;text-align:center">
+    <strong>Error:</strong> ${msg || 'Could not load data. Is the backend running?'}
+  </div>`;
 }
 
 /* ═══════════════════════════════════════
@@ -1494,8 +1607,8 @@ function fmt(iso) {
     ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
 }
 
-// Global fallback
-window.__fs = () => {};
+window.__fs  = () => {};
+window.__tab = () => {};
 </script>
 </body>
 </html>
