@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TrainServe — Order Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+
+/* ─── Tokens ─── */
+:root {
+  --bg:          #f4f5f7;
+  --surface:     #ffffff;
+  --surface-2:   #f9fafb;
+  --border:      #e5e7eb;
+  --border-md:   #d1d5db;
+  --text:        #111827;
+  --text-2:      #374151;
+  --text-muted:  #6b7280;
+  --accent:      #111827;
+  --accent-fg:   #ffffff;
+  --accent-h:    #1f2937;
+  --green:       #15803d;
+  --green-bg:    #dcfce7;
+  --amber:       #b45309;
+  --amber-bg:    #fef3c7;
+  --blue:        #1d4ed8;
+  --blue-bg:     #dbeafe;
+  --red:         #b91c1c;
+  --red-bg:      #fee2e2;
+  --radius:      8px;
+  --radius-sm:   5px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow:      0 4px 12px rgba(0,0,0,.08);
+  --font:        'Inter', system-ui, -apple-system, sans-serif;
+  --topbar-h:    56px;
+  --sidebar-w:   220px;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ─── Utilities ─── */
+.hidden  { display: none !important; }
+.flex    { display: flex; }
+.col     { flex-direction: column; }
+.items-c { align-items: center; }
+.jc-sb   { justify-content: space-between; }
+.gap-4   { gap: 4px; }
+.gap-8   { gap: 8px; }
+.gap-12  { gap: 12px; }
+.gap-16  { gap: 16px; }
+.w-full  { width: 100%; }
+.muted   { color: var(--text-muted); }
+.small   { font-size: 12px; }
+.semi    { font-weight: 600; }
+.bold    { font-weight: 700; }
+.tc      { text-align: center; }
+.mt-4    { margin-top: 4px; }
+.mt-8    { margin-top: 8px; }
+.mt-12   { margin-top: 12px; }
+.mt-16   { margin-top: 16px; }
+.mt-24   { margin-top: 24px; }
+.mb-4    { margin-bottom: 4px; }
+.mb-8    { margin-bottom: 8px; }
+.mb-12   { margin-bottom: 12px; }
+.mb-16   { margin-bottom: 16px; }
+.mb-24   { margin-bottom: 24px; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 9px;
+  border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: .2px;
+}
+.badge-pending   { background: var(--amber-bg);  color: var(--amber); }
+.badge-accepted  { background: var(--blue-bg);   color: var(--blue);  }
+.badge-completed { background: var(--green-bg);  color: var(--green); }
+.badge-cancelled { background: var(--red-bg);    color: var(--red);   }
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 18px; border-radius: var(--radius-sm); border: 1px solid transparent;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: var(--font); text-decoration: none;
+  transition: background .15s, border-color .15s, opacity .15s;
+  white-space: nowrap;
+}
+.btn:hover  { opacity: .88; }
+.btn:active { opacity: .75; }
+.btn-primary { background: var(--accent);    color: var(--accent-fg); border-color: var(--accent); }
+.btn-outline { background: var(--surface);   color: var(--text-2);    border-color: var(--border-md); }
+.btn-outline:hover { background: var(--bg); }
+.btn-green  { background: var(--green);      color: #fff; border-color: var(--green); }
+.btn-red    { background: var(--red);        color: #fff; border-color: var(--red);   }
+.btn-sm     { padding: 6px 12px; font-size: 12px; }
+.btn-xs     { padding: 4px 8px;  font-size: 11px; }
+.btn-full   { width: 100%; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ─── Forms ─── */
+label {
+  font-size: 12px; font-weight: 500; color: var(--text-2);
+  display: block; margin-bottom: 5px; letter-spacing: .1px;
+}
+input, select, textarea {
+  width: 100%; padding: 9px 12px;
+  border: 1px solid var(--border-md); border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 14px; color: var(--text);
+  background: var(--surface); outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none; appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(17,24,39,.08);
+}
+input::placeholder { color: #9ca3af; }
+textarea { resize: vertical; min-height: 64px; }
+.form-group { margin-bottom: 16px; }
+.form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
+
+/* ETA — single time input with AM/PM display trick */
+.eta-wrap { position: relative; }
+.eta-wrap input[type="time"] {
+  padding-right: 52px;
+  font-size: 14px;
+}
+.eta-ampm-badge {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  background: var(--bg); padding: 2px 6px; border-radius: 3px;
+  pointer-events: none; border: 1px solid var(--border);
+}
+
+/* ─── Card ─── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm);
+}
+.card + .card { margin-top: 16px; }
+.card-header { margin-bottom: 16px; }
+.card-title  { font-size: 14px; font-weight: 600; color: var(--text); }
+.card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.section-title { font-size: 18px; font-weight: 700; letter-spacing: -.2px; }
+.section-sub   { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+/* ─── Topbar ─── */
+.topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 24px; height: var(--topbar-h);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-brand { font-weight: 700; font-size: 15px; letter-spacing: -.3px; color: var(--text); }
+.topbar-brand span { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-user {
+  font-size: 12px; color: var(--text-muted);
+  background: var(--bg); border: 1px solid var(--border);
+  padding: 5px 12px; border-radius: 20px;
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@media (max-width: 520px) { .topbar { padding: 0 14px; } .topbar-user { max-width: 110px; } }
+
+/* ─── App layout ─── */
+.app-layout { display: flex; min-height: calc(100vh - var(--topbar-h)); }
+
+/* ─── Sidebar ─── */
+.sidebar {
+  width: var(--sidebar-w); background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 12px 0; flex-shrink: 0;
+  display: flex; flex-direction: column;
+}
+@media (max-width: 680px) { .sidebar { display: none; } }
+
+.sidebar-section { padding: 4px 14px 2px; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-top: 8px; }
+
+.sidebar-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 16px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text-muted);
+  border-left: 3px solid transparent; border-radius: 0;
+  transition: all .12s; user-select: none;
+}
+.sidebar-item:hover { background: var(--bg); color: var(--text); }
+.sidebar-item.active {
+  color: var(--text); background: var(--bg);
+  border-left-color: var(--accent);
+}
+.sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; stroke: currentColor; fill: none; }
+
+.sidebar-footer {
+  margin-top: auto; padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── Main content ─── */
+.main-content {
+  flex: 1; padding: 28px 24px; overflow-y: auto;
+  max-width: calc(100vw - var(--sidebar-w));
+}
+@media (max-width: 680px) {
+  .main-content {
+    padding: 18px 14px;
+    max-width: 100vw;
+    padding-bottom: 80px; /* room for mobile nav */
+  }
+}
+
+/* ─── Mobile bottom nav ─── */
+.mob-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 1px solid var(--border);
+  z-index: 100; padding: 4px 0 env(safe-area-inset-bottom, 4px);
+}
+@media (max-width: 680px) { .mob-nav { display: flex; justify-content: space-around; } }
+.mob-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 10px; cursor: pointer; font-size: 10px; font-weight: 500;
+  color: var(--text-muted); flex: 1;
+}
+.mob-nav-item.active { color: var(--text); }
+.mob-nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+
+/* ─── Login / Auth page ─── */
+#auth-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: var(--bg);
+}
+.auth-box { width: 100%; max-width: 400px; }
+.auth-logo {
+  font-weight: 700; font-size: 20px; letter-spacing: -.3px;
+  margin-bottom: 2px; color: var(--text);
+}
+.auth-tagline { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+
+/* Role selector */
+.role-selector { display: flex; gap: 8px; margin-bottom: 20px; }
+.role-btn {
+  flex: 1; padding: 9px 8px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-md); background: var(--surface);
+  font-size: 12px; font-weight: 600; cursor: pointer; text-align: center;
+  color: var(--text-muted); transition: all .12s; font-family: var(--font);
+}
+.role-btn:hover { border-color: var(--border-md); color: var(--text); background: var(--bg); }
+.role-btn.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+/* Sign in / Sign up tabs inside card */
+.auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
+.auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; gap: 0; }
+.auth-tab {
+  flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: all .12s; background: none; border-top: none; border-left: none; border-right: none;
+  font-family: var(--font);
+}
+.auth-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.auth-form-pane { display: none; }
+.auth-form-pane.active { display: block; }
+.auth-help { font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center; }
+.auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.auth-divider span { font-size: 11px; color: var(--text-muted); }
+
+/* ─── Order cards ─── */
+.order-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.order-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.order-id { font-size: 13px; font-weight: 700; letter-spacing: .2px; }
+.order-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.order-meta { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.meta-item { font-size: 12px; color: var(--text-muted); }
+.meta-item strong { color: var(--text-2); font-weight: 500; display: block; }
+.order-items-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: var(--text-2); }
+.item-row.total-row { font-weight: 600; color: var(--text); padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--border); font-size: 13px; }
+.order-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+/* ─── Product grid ─── */
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.product-tile {
+  border: 2px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px 10px 10px; text-align: center; cursor: pointer;
+  background: var(--surface); transition: border-color .15s;
+  display: flex; flex-direction: column; align-items: center;
+}
+.product-tile:hover { border-color: var(--border-md); }
+.product-tile.selected { border-color: var(--accent); background: #f8faff; }
+.prod-img {
+  width: 44px; height: 44px; border-radius: 6px; margin-bottom: 8px;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  font-size: 26px; line-height: 1;
+}
+.prod-name  { font-size: 12px; font-weight: 600; color: var(--text); }
+.prod-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.prod-price { font-size: 12px; font-weight: 600; color: var(--text-2); margin-top: 4px; }
+.qty-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin-top: 10px; width: 100%;
+}
+.qty-btn {
+  width: 26px; height: 26px; border: 1px solid var(--border-md);
+  border-radius: 4px; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 15px; color: var(--text-2);
+  transition: background .12s;
+}
+.qty-btn:hover { background: var(--border); }
+.qty-num {
+  width: 28px; text-align: center; font-size: 13px; font-weight: 600;
+  border: none; background: none; color: var(--text); outline: none; font-family: var(--font);
+}
+
+/* ─── Summary table ─── */
+.summary-table { width: 100%; }
+.summary-table td { padding: 5px 0; font-size: 13px; }
+.summary-table td:last-child { text-align: right; font-weight: 500; }
+.summary-footer td { padding-top: 12px; font-weight: 700; font-size: 15px; border-top: 1px solid var(--border); }
+
+/* ─── Stats ─── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm);
+}
+.stat-val   { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.5px; }
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
+
+/* ─── Data table ─── */
+.table-scroll { overflow-x: auto; }
+table.dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.dt thead th {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .5px;
+  padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left;
+  background: var(--surface-2);
+}
+table.dt tbody td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.dt tbody tr:last-child td { border-bottom: none; }
+table.dt tbody tr:hover td { background: var(--bg); }
+
+/* ─── Chart bars ─── */
+.chart-wrap { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.bar {
+  width: 100%; background: var(--accent); border-radius: 3px 3px 0 0;
+  min-height: 4px; opacity: .75; position: relative;
+  transition: opacity .15s;
+}
+.bar:hover { opacity: 1; }
+.bar-count { font-size: 10px; color: var(--text-muted); position: absolute; top: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+.bar-lbl { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: center; }
+
+/* ─── Crew card ─── */
+.crew-card {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.crew-card:last-child { border-bottom: none; }
+.crew-avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--bg);
+  border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--text-muted); flex-shrink: 0;
+}
+.crew-name { font-size: 13px; font-weight: 600; }
+.crew-meta { font-size: 11px; color: var(--text-muted); }
+.online-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 5px; }
+.offline-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--border-md); margin-right: 5px; }
+
+/* ─── Notification list ─── */
+.notif-item { padding: 13px 0; border-bottom: 1px solid var(--border); }
+.notif-item:last-child { border-bottom: none; }
+.notif-msg  { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.notif-ts   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.notif-item.unread { background: #eff6ff; padding-left: 10px; padding-right: 10px; border-radius: 6px; border: 1px solid #dbeafe; margin-bottom: 6px; }
+
+/* ─── Upload area ─── */
+.upload-zone {
+  border: 2px dashed var(--border-md); border-radius: var(--radius-sm);
+  padding: 28px 16px; text-align: center; cursor: pointer;
+  position: relative; transition: border-color .15s; background: var(--surface-2);
+}
+.upload-zone:hover { border-color: var(--accent); }
+.upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 1; }
+.upload-zone-icon { font-size: 28px; margin-bottom: 8px; color: var(--text-muted); }
+.upload-zone p { font-size: 13px; color: var(--text-muted); }
+.upload-preview img { max-width: 100%; max-height: 180px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 12px; }
+
+/* ─── Modal ─── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal {
+  background: var(--surface); border-radius: var(--radius); width: 100%;
+  max-width: 480px; max-height: 90vh; overflow-y: auto; padding: 24px;
+  position: relative; box-shadow: var(--shadow);
+}
+.modal-close {
+  position: absolute; top: 16px; right: 16px; background: none; border: none;
+  cursor: pointer; color: var(--text-muted); line-height: 1; font-size: 18px;
+}
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 18px; padding-right: 24px; }
+
+/* ─── Popup reminder (crew) ─── */
+.popup-reminder {
+  position: fixed; top: calc(var(--topbar-h) + 12px); left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border-md);
+  border-radius: var(--radius); width: 90%; max-width: 360px;
+  padding: 20px; z-index: 400; box-shadow: var(--shadow);
+  animation: slideDown .2s ease;
+}
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-10px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);     opacity: 1; }
+}
+.popup-step-label {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--text-muted); margin-bottom: 6px;
+}
+.popup-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.popup-body  { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; }
+.popup-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ─── Toast ─── */
+#toast-wrap {
+  position: fixed; bottom: 72px; right: 16px; z-index: 300;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+@media (min-width: 681px) { #toast-wrap { bottom: 20px; } }
+.toast {
+  background: var(--text); color: #fff; padding: 11px 16px;
+  border-radius: var(--radius-sm); font-size: 13px; max-width: 300px;
+  box-shadow: var(--shadow); animation: slideLeft .2s ease;
+  pointer-events: auto;
+}
+.toast.ok   { background: var(--green); }
+.toast.warn { background: var(--amber); }
+.toast.err  { background: var(--red);   }
+@keyframes slideLeft { from { transform: translateX(12px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ─── Empty state ─── */
+.empty-state {
+  text-align: center; padding: 48px 16px; color: var(--text-muted);
+}
+.empty-state svg { width: 40px; height: 40px; stroke: var(--border-md); margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ─── Progress bar ─── */
+.progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+
+/* ─── SVG icon helper ─── */
+.icon { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ─── Responsive page title row ─── */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     AUTH PAGE
+════════════════════════════════ -->
+<div id="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">TrainServe</div>
+    <div class="auth-tagline">Railway pantry order management platform</div>
+
+    <!-- Role selector -->
+    <div class="role-selector" id="role-selector">
+      <button class="role-btn active" onclick="setRole('user')">Passenger / Pantry</button>
+      <button class="role-btn" onclick="setRole('crew')">Crew</button>
+      <button class="role-btn" onclick="setRole('admin')">Admin</button>
+    </div>
+
+    <!-- User / Pantry card -->
+    <div id="auth-user" class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="setAuthMode('signin')">Sign In</button>
+        <button class="auth-tab" onclick="setAuthMode('signup')">Sign Up</button>
+      </div>
+
+      <!-- Sign In -->
+      <div id="pane-signin" class="auth-form-pane active">
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="u-email" placeholder="you@gmail.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="u-pass" placeholder="Enter your password" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="loginAs('user')">Sign In</button>
+        <p class="auth-help">Don't have an account? <a href="#" onclick="setAuthMode('signup');return false;" style="color:var(--text);text-decoration:underline;">Sign up</a></p>
+      </div>
+
+      <!-- Sign Up -->
+      <div id="pane-signup" class="auth-form-pane">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First name</label>
+            <input type="text" id="u-fname" placeholder="Ravi">
+          </div>
+          <div class="form-group">
+            <label>Last name</label>
+            <input type="text" id="u-lname" placeholder="Kumar">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" id="u-semail" placeholder="you@gmail.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="u-spass" placeholder="Create a password (min 6 chars)" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="u-srole">
+            <option value="user">Passenger</option>
+            <option value="pantry">Pantry Coordinator</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="signupAs()">Create Account</button>
+        <p class="auth-help">Already have an account? <a href="#" onclick="setAuthMode('signin');return false;" style="color:var(--text);text-decoration:underline;">Sign in</a></p>
+      </div>
+    </div>
+
+    <!-- Crew card -->
+    <div id="auth-crew" class="auth-card hidden">
+      <div class="card-header">
+        <div class="card-title">Crew Sign In</div>
+        <div class="card-subtitle">Select your profile and enter your PIN</div>
+      </div>
+      <div class="form-group">
+        <label>Crew Member</label>
+        <select id="c-id">
+          <option value="">— Select —</option>
+          <option value="crew1">Crew 1 — Ramesh Kumar</option>
+          <option value="crew2">Crew 2 — Priya Devi</option>
+          <option value="crew3">Crew 3 — Suresh Babu</option>
+          <option value="crew4">Crew 4 — Meena S</option>
+          <option value="crew5">Crew 5 — Arjun M</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>PIN</label>
+        <input type="password" id="c-pin" placeholder="4-digit PIN" maxlength="4" autocomplete="current-password" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="loginAs('crew')">Sign In</button>
+    </div>
+
+    <!-- Admin card -->
+    <div id="auth-admin" class="auth-card hidden">
+      <div class="card-header">
+        <div class="card-title">Admin Sign In</div>
+        <div class="card-subtitle">Restricted access — administrators only</div>
+      </div>
+      <div class="form-group">
+        <label>Admin email</label>
+        <input type="email" id="a-email" placeholder="admin@trainserve.in" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="a-pass" placeholder="Enter password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="loginAs('admin')">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     MAIN APP
+════════════════════════════════ -->
+<div id="app" class="hidden">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-brand">TrainServe <span id="topbar-role-tag"></span></div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <!-- Content -->
+    <main class="main-content" id="main-content"></main>
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <nav class="mob-nav" id="mob-nav"></nav>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="outsideModal(event)">
+  <div class="modal" id="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- CREW REMINDER POPUP -->
+<div class="popup-reminder hidden" id="popup-reminder">
+  <div class="popup-step-label" id="popup-step"></div>
+  <div class="popup-title"  id="popup-title"></div>
+  <div class="popup-body"   id="popup-body"></div>
+  <div class="popup-actions">
+    <button class="btn btn-outline btn-sm" onclick="dismissPopup()">Dismiss</button>
+    <button class="btn btn-primary btn-sm" onclick="dismissPopup()">Acknowledged</button>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toast-wrap"></div>
+
+<script>
+/* ═══════════════════════════════════════
+   BACKEND URL — change this if you move your backend
+═══════════════════════════════════════ */
+const API = 'https://freckles-spectacle-expenses.ngrok-free.dev';
+
+/* ═══════════════════════════════════════
+   CONSTANTS (same as original)
+═══════════════════════════════════════ */
+const PRODUCTS = [
+  { id:'wb1', name:'Water Bottle',   icon:'💧', price:20,  unit:'1 L'        },
+  { id:'wb2', name:'Water Bottle',   icon:'💧', price:15,  unit:'500 ml'     },
+  { id:'ch1', name:'Chips — Small',  icon:'🍟', price:50,  unit:'50 g pack'  },
+  { id:'ch2', name:'Chips — Large',  icon:'🍟', price:100, unit:'100 g pack' },
+  { id:'bsc', name:'Biscuits',       icon:'🍪', price:30,  unit:'Pack'       },
+  { id:'juc', name:'Juice',          icon:'🥤', price:40,  unit:'200 ml'     },
+  { id:'sna', name:'Sandwich',       icon:'🥪', price:80,  unit:'Piece'      },
+  { id:'tea', name:'Tea / Coffee',   icon:'☕', price:20,  unit:'Cup'        },
+];
+
+const REMINDER_STEPS = [
+  { step:'Step 1 of 3', title:'Are all items packed?',          body:'Verify every item in this order is packed and ready.' },
+  { step:'Step 2 of 3', title:'Ready for delivery?',            body:'Confirm packaging is sealed and you are at the collection point.' },
+  { step:'Step 3 of 3', title:'Train arriving in ~15 minutes.', body:'Make your way to the delivery station immediately.' },
+];
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let currentUser    = null;  // { token, id, name, email, role, crewId, initials }
+let currentRole    = 'user';
+let currentAuthMode = 'signin';
+let currentPage    = null;
+let orderCart      = {};
+let reminderTimers = [];
+let crewList       = [];    // loaded from /api/users/crew after login
+
+/* ═══════════════════════════════════════
+   API HELPERS
+═══════════════════════════════════════ */
+async function apiFetch(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (currentUser?.token) headers['Authorization'] = 'Bearer ' + currentUser.token;
+  const res = await fetch(API + path, { ...options, headers: { ...headers, ...(options.headers||{}) } });
+  if (res.status === 204) return null;
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.error || 'Request failed');
+  return data;
+}
+
+async function loadCrew() {
+  try { crewList = await apiFetch('/users/crew'); }
+  catch { crewList = []; }
+}
+
+function crewById(crewId) {
+  return crewList.find(c => c.crewId === crewId) || null;
+}
+
+/* ═══════════════════════════════════════
+   AUTH HELPERS (UI only — no change)
+═══════════════════════════════════════ */
+function setRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['user','crew','admin'][i] === role);
+  });
+  document.getElementById('auth-user').classList.toggle('hidden',  role !== 'user');
+  document.getElementById('auth-crew').classList.toggle('hidden',  role !== 'crew');
+  document.getElementById('auth-admin').classList.toggle('hidden', role !== 'admin');
+}
+
+function setAuthMode(mode) {
+  currentAuthMode = mode;
+  document.querySelectorAll('.auth-tab').forEach((t, i) => t.classList.toggle('active', ['signin','signup'][i] === mode));
+  document.getElementById('pane-signin').classList.toggle('active', mode === 'signin');
+  document.getElementById('pane-signup').classList.toggle('active', mode === 'signup');
+}
+
+/* ═══════════════════════════════════════
+   SIGN UP
+═══════════════════════════════════════ */
+async function signupAs() {
+  const fname = document.getElementById('u-fname').value.trim();
+  const lname = document.getElementById('u-lname').value.trim();
+  const email = document.getElementById('u-semail').value.trim();
+  const pass  = document.getElementById('u-spass').value;
+  const role  = document.getElementById('u-srole').value.toUpperCase();
+  if (!fname || !email || !pass) { toast('Fill in all required fields', 'err'); return; }
+  if (pass.length < 6) { toast('Password must be at least 6 characters', 'err'); return; }
+  try {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ firstName: fname, lastName: lname, email, password: pass, role })
+    });
+    currentUser = data;
+    await loadCrew();
+    launchApp();
+    toast('Account created successfully!', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+
+
+  /* ═══════════════════════════════════════
+   ngrok api fetch 
+═══════════════════════════════════════ */
+
+
+
+ async function loadCrew() {
+
+
+
+  
+
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+async function loginAs(role) {
+  try {
+    if (role === 'user' || role === 'admin') {
+      const emailId = role === 'user' ? 'u-email'  : 'a-email';
+      const passId  = role === 'user' ? 'u-pass'   : 'a-pass';
+      const email = document.getElementById(emailId).value.trim();
+      const pass  = document.getElementById(passId).value;
+      if (!email || !pass) { toast('Enter your email and password', 'err'); return; }
+      const data = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password: pass })
+      });
+      currentUser = data;
+    } else {
+      const crewId = document.getElementById('c-id').value;
+      const pin    = document.getElementById('c-pin').value;
+      if (!crewId || pin.length < 4) { toast('Select your profile and enter 4-digit PIN', 'err'); return; }
+      const data = await apiFetch('/auth/crew-login', {
+        method: 'POST',
+        body: JSON.stringify({ crewId, pin })
+      });
+      currentUser = data;
+    }
+    await loadCrew();
+    launchApp();
+  } catch (e) { toast(e.message || 'Login failed', 'err'); }
+}
+
+/* ═══════════════════════════════════════
+   LOGOUT
+═══════════════════════════════════════ */
+async function logout() {
+  clearTimers();
+  document.getElementById('popup-reminder').classList.add('hidden');
+  try { await apiFetch('/users/logout', { method: 'POST' }); } catch {}
+  currentUser = null; currentPage = null; crewList = [];
+  document.getElementById('auth-page').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+const ICONS = {
+  order:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>`,
+  plus:    `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>`,
+  bell:    `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>`,
+  truck:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+  dash:    `<svg viewBox="0 0 24 24" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
+  list:    `<svg viewBox="0 0 24 24" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+  users:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
+  chart:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  inbox:   `<svg viewBox="0 0 24 24" stroke-width="1.8"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>`,
+  log:     `<svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+};
+
+const NAV = {
+  user:  [
+    { id:'place-order',   label:'New Order',      icon:'plus'  },
+    { id:'my-orders',     label:'My Orders',      icon:'order' },
+    { id:'notifications', label:'Notifications',  icon:'bell'  },
+  ],
+  crew:  [
+    { id:'pending-orders',label:'Incoming Orders',icon:'inbox' },
+    { id:'my-deliveries', label:'My Deliveries',  icon:'truck' },
+    { id:'notifications', label:'Notifications',  icon:'bell'  },
+  ],
+  admin: [
+    { id:'dashboard',     label:'Dashboard',      icon:'dash'  },
+    { id:'all-orders',    label:'All Orders',     icon:'list'  },
+    { id:'place-order',   label:'New Order',      icon:'plus'  },
+    { id:'crew-mgmt',     label:'Crew',           icon:'users' },
+    { id:'analytics',     label:'Analytics',      icon:'chart' },
+    { id:'users-page',    label:'Users',          icon:'users' },
+    { id:'audit-logs',    label:'Audit Logs',     icon:'log'   },
+  ],
+};
+
+function launchApp() {
+  document.getElementById('auth-page').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('topbar-user').textContent = currentUser.name;
+  const r = currentUser.role;
+  document.getElementById('topbar-role-tag').textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+  buildNav();
+  navigateTo(NAV[currentUser.role.toLowerCase()]?.[0]?.id || 'place-order');
+}
+
+function buildNav() {
+  const role  = currentUser.role.toLowerCase();
+  const items = NAV[role] || NAV.user;
+  const sb = document.getElementById('sidebar');
+  const mn = document.getElementById('mob-nav');
+  sb.innerHTML = ''; mn.innerHTML = '';
+  items.forEach(it => {
+    sb.innerHTML += `<div class="sidebar-item" id="si-${it.id}" onclick="navigateTo('${it.id}')">
+      <span class="icon">${ICONS[it.icon]}</span> ${it.label}
+    </div>`;
+    mn.innerHTML += `<div class="mob-nav-item" id="mi-${it.id}" onclick="navigateTo('${it.id}')">
+      <span class="icon">${ICONS[it.icon]}</span>${it.label}
+    </div>`;
+  });
+}
+
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.sidebar-item,.mob-nav-item').forEach(e => e.classList.remove('active'));
+  document.getElementById('si-'+page)?.classList.add('active');
+  document.getElementById('mi-'+page)?.classList.add('active');
+  const mc = document.getElementById('main-content');
+  mc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Loading…</div>';
+  ({
+    'place-order':    renderPlaceOrder,
+    'my-orders':      renderMyOrders,
+    'notifications':  renderNotifications,
+    'pending-orders': renderPendingOrders,
+    'my-deliveries':  renderMyDeliveries,
+    'dashboard':      renderDashboard,
+    'all-orders':     renderAllOrders,
+    'crew-mgmt':      renderCrewMgmt,
+    'analytics':      renderAnalytics,
+    'users-page':     renderUsers,
+    'audit-logs':     renderAuditLogs,
+  })[page]?.(mc);
+}
+
+/* ═══════════════════════════════════════
+   ETA INPUT (unchanged)
+═══════════════════════════════════════ */
+function etaHTML() {
+  return `<div class="eta-wrap">
+    <input type="time" id="po-eta" onchange="updateAmPm()" oninput="updateAmPm()">
+    <span class="eta-ampm-badge" id="eta-ampm">--</span>
+  </div>`;
+}
+function updateAmPm() {
+  const v = document.getElementById('po-eta')?.value;
+  if (!v) { document.getElementById('eta-ampm').textContent = '--'; return; }
+  document.getElementById('eta-ampm').textContent = parseInt(v.split(':')[0]) >= 12 ? 'PM' : 'AM';
+}
+function getEta() {
+  const v = document.getElementById('po-eta')?.value;
+  if (!v) return '';
+  const [H, M] = v.split(':').map(Number);
+  const ampm = H >= 12 ? 'PM' : 'AM';
+  const hr   = H % 12 || 12;
+  return `${String(hr).padStart(2,'0')}:${String(M).padStart(2,'0')} ${ampm}`;
+}
+
+/* ═══════════════════════════════════════
+   PAGE: PLACE ORDER
+═══════════════════════════════════════ */
+function renderPlaceOrder(el) {
+  orderCart = {};
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="section-title">New Order</div>
+      <div class="section-sub">Fill in train details and select items below.</div></div>
+    </div>
+    <div class="card mb-16">
+      <div class="card-header"><div class="card-title">Train & Passenger Details</div></div>
+      <div class="form-row">
+        <div class="form-group"><label>Passenger Name</label>
+          <input type="text" id="po-name" placeholder="Full name" value="${currentUser.name}"></div>
+        <div class="form-group"><label>Train Number</label>
+          <input type="text" id="po-trainno" placeholder="e.g. 12631" inputmode="numeric"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Train Name</label>
+          <input type="text" id="po-trainname" placeholder="e.g. Nellai Express"></div>
+        <div class="form-group"><label>Current Location of Train</label>
+          <input type="text" id="po-location" placeholder="e.g. Madurai Jn"></div>
+      </div>
+      <div class="form-group"><label>Expected Arrival Time at Delivery Station</label>${etaHTML()}</div>
+    </div>
+    <div class="card mb-16">
+      <div class="card-header"><div class="card-title">Select Items</div>
+        <div class="card-subtitle">Tap an item to add it to your order</div></div>
+      <div class="product-grid" id="product-grid"></div>
+    </div>
+    <div class="card" id="summary-card">
+      <div class="card-header"><div class="card-title">Order Summary</div></div>
+      <div id="summary-body"><p class="muted small">No items selected yet.</p></div>
+      <div class="divider"></div>
+      <div class="flex jc-sb" style="font-size:16px;font-weight:700" id="total-row">
+        <span>Total</span><span>₹0</span>
+      </div>
+      <button class="btn btn-primary btn-full mt-16" id="submit-btn" onclick="submitOrder()">Place Order</button>
+    </div>`;
+  buildProductGrid();
+}
+
+function buildProductGrid() {
+  const grid = document.getElementById('product-grid');
+  PRODUCTS.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'product-tile' + (orderCart[p.id] ? ' selected' : '');
+    d.id = 'pt-' + p.id;
+    d.innerHTML = `
+      <div class="prod-img">${p.icon}</div>
+      <div class="prod-name">${p.name}</div>
+      <div class="prod-sub">${p.unit}</div>
+      <div class="prod-price">₹${p.price}</div>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="event.stopPropagation();chQty('${p.id}',-1)">−</button>
+        <input class="qty-num" type="number" id="q-${p.id}" value="${orderCart[p.id]||0}" min="0" readonly>
+        <button class="qty-btn" onclick="event.stopPropagation();chQty('${p.id}',1)">+</button>
+      </div>`;
+    grid.appendChild(d);
+  });
+}
+
+function chQty(pid, d) {
+  const nv = Math.max(0, (orderCart[pid]||0) + d);
+  if (nv === 0) delete orderCart[pid]; else orderCart[pid] = nv;
+  const inp = document.getElementById('q-'+pid);
+  if (inp) inp.value = nv;
+  document.getElementById('pt-'+pid)?.classList.toggle('selected', nv > 0);
+  refreshSummary();
+}
+
+function refreshSummary() {
+  const body = document.getElementById('summary-body');
+  const totalEl = document.getElementById('total-row');
+  const ids = Object.keys(orderCart);
+  if (!ids.length) { body.innerHTML = '<p class="muted small">No items selected yet.</p>'; totalEl.lastElementChild.textContent = '₹0'; return; }
+  let total = 0, rows = '';
+  ids.forEach(id => {
+    const p = PRODUCTS.find(x => x.id === id), qty = orderCart[id], sub = p.price * qty;
+    total += sub;
+    rows += `<tr><td>${p.name}</td><td style="color:var(--text-muted)">× ${qty}</td><td>₹${sub}</td></tr>`;
+  });
+  body.innerHTML = `<table class="summary-table"><tbody>${rows}</tbody></table>`;
+  totalEl.lastElementChild.textContent = '₹' + total;
+}
+
+async function submitOrder() {
+  const name   = document.getElementById('po-name')?.value.trim();
+  const tno    = document.getElementById('po-trainno')?.value.trim();
+  const tname  = document.getElementById('po-trainname')?.value.trim();
+  const loc    = document.getElementById('po-location')?.value.trim();
+  const eta    = getEta();
+  if (!name || !tno || !tname || !loc) { toast('Please fill in all train details', 'err'); return; }
+  if (!eta) { toast('Please select the expected arrival time', 'err'); return; }
+  if (!Object.keys(orderCart).length) { toast('Select at least one item', 'err'); return; }
+
+  const items = Object.keys(orderCart).map(id => {
+    const p = PRODUCTS.find(x => x.id === id);
+    return { productId: id, name: p.name, qty: orderCart[id], price: p.price };
+  });
+
+  try {
+    document.getElementById('submit-btn').disabled = true;
+    const order = await apiFetch('/orders', {
+      method: 'POST',
+      body: JSON.stringify({ userName: name, trainNo: tno, trainName: tname, currentLocation: loc, eta, items })
+    });
+    toast('Order placed — ID: ' + order.id, 'ok');
+    orderCart = {};
+    const role = currentUser.role.toLowerCase();
+    navigateTo(role === 'admin' ? 'all-orders' : 'my-orders');
+  } catch (e) {
+    toast(e.message || 'Failed to place order', 'err');
+    document.getElementById('submit-btn').disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════
+   PAGES
+═══════════════════════════════════════ */
+async function renderMyOrders(el) {
+  try {
+    const orders = await apiFetch('/orders/my');
+    el.innerHTML = `<div class="page-header">
+      <div><div class="section-title">My Orders</div></div>
+      <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
+    </div>`;
+    if (!orders.length) { el.appendChild(emptyState('No orders placed yet.')); return; }
+    orders.forEach(o => el.appendChild(orderCard(o, 'user')));
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderPendingOrders(el) {
+  try {
+    const orders = await apiFetch('/orders/pending');
+    el.innerHTML = `<div class="page-header"><div><div class="section-title">Incoming Orders</div>
+      <div class="section-sub">Accept an order to begin delivery</div></div></div>`;
+    if (!orders.length) { el.appendChild(emptyState('No pending orders at this time.')); return; }
+    orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderMyDeliveries(el) {
+  try {
+    const orders = await apiFetch('/orders/deliveries');
+    el.innerHTML = `<div class="page-header"><div><div class="section-title">My Deliveries</div></div></div>`;
+    if (!orders.length) { el.appendChild(emptyState('No deliveries assigned yet.')); return; }
+    orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderNotifications(el) {
+  try {
+    const notifs = await apiFetch('/notifications');
+    el.innerHTML = `<div class="page-header">
+      <div><div class="section-title">Notifications</div></div>
+      <button class="btn btn-outline btn-sm" onclick="markRead()">Mark all read</button>
+    </div>
+    <div class="card">
+      <div id="notif-list">
+        ${!notifs.length
+          ? '<p class="muted small tc" style="padding:24px 0">No notifications.</p>'
+          : notifs.map(n => `<div class="notif-item${n.read?'':' unread'}">
+              <div class="notif-msg">${n.message}</div>
+              <div class="notif-ts">${fmt(n.time)}</div>
+            </div>`).join('')}
+      </div>
+    </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function markRead() {
+  try {
+    await apiFetch('/notifications/mark-read', { method: 'PATCH' });
+    navigateTo('notifications');
+  } catch {}
+}
+
+/* ─── Admin pages ─── */
+async function renderDashboard(el) {
+  try {
+    const [stats, orders, crew] = await Promise.all([
+      apiFetch('/orders/stats'),
+      apiFetch('/orders/all'),
+      apiFetch('/users/crew'),
+    ]);
+    el.innerHTML = `
+      <div class="page-header"><div><div class="section-title">Dashboard</div>
+        <div class="section-sub">${fmt(new Date().toISOString())}</div></div></div>
+      <div class="stats-grid mb-16">
+        <div class="stat-card"><div class="stat-val">${stats.totalOrders}</div><div class="stat-label">Total Orders</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--amber)">${stats.pending}</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--blue)">${stats.accepted}</div><div class="stat-label">In Progress</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--green)">${stats.completed}</div><div class="stat-label">Completed</div></div>
+        <div class="stat-card"><div class="stat-val">₹${stats.revenue}</div><div class="stat-label">Revenue</div></div>
+      </div>
+      <div class="card mb-16">
+        <div class="card-header"><div class="card-title">Recent Orders</div></div>
+        ${orders.slice(0,5).map(o => `
+          <div class="flex jc-sb items-c" style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-size:13px;font-weight:600">${o.id} <span style="font-weight:400;color:var(--text-muted)">— ${o.trainName}</span></div>
+              <div style="font-size:11px;color:var(--text-muted)">${o.userName} · ETA ${o.eta}</div>
+            </div>
+            <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
+          </div>`).join('')}
+        <button class="btn btn-outline btn-sm mt-12" onclick="navigateTo('all-orders')">View all orders</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Crew Overview</div></div>
+        ${crew.map(c => {
+          const active = orders.filter(o => o.assignedCrewId === c.crewId && o.status === 'ACCEPTED').length;
+          return `<div class="crew-card">
+            <div class="flex items-c gap-12">
+              <div class="crew-avatar">${c.initials||c.name[0]}</div>
+              <div><div class="crew-name">${c.name}</div><div class="crew-meta">${active} active order${active!==1?'s':''}</div></div>
+            </div>
+            <span style="font-size:12px;color:${c.online?'var(--green)':'var(--text-muted)'}">
+              <span class="${c.online?'online-dot':'offline-dot'}"></span>${c.online?'Online':'Offline'}
+            </span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderAllOrders(el) {
+  try {
+    let orders = await apiFetch('/orders/all');
+    let fs = 'all';
+    const draw = () => {
+      const list = fs === 'all' ? orders : orders.filter(o => o.status.toLowerCase() === fs);
+      el.innerHTML = `
+        <div class="page-header">
+          <div><div class="section-title">All Orders</div></div>
+          <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
+        </div>
+        <div class="flex gap-8 mb-16" style="flex-wrap:wrap">
+          ${['all','pending','accepted','completed'].map(s =>
+            `<button class="btn btn-sm ${fs===s?'btn-primary':'btn-outline'}" onclick="__fs('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
+          ).join('')}
+        </div>
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>ID</th><th>Customer</th><th>Train</th><th>ETA</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${list.map(o => `<tr>
+                <td style="font-weight:600">${o.id}</td>
+                <td>${o.userName}</td>
+                <td>${o.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${o.trainName}</span></td>
+                <td>${o.eta}</td>
+                <td>₹${o.total}</td>
+                <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
+                <td>
+                  ${o.status==='PENDING'?`<button class="btn btn-outline btn-xs" onclick="openAssign('${o.id}')">Assign</button> `:''}
+                  <button class="btn btn-outline btn-xs" onclick="openDetail('${o.id}')">View</button>
+                </td>
+              </tr>`).join('')}
+              ${!list.length?`<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">No orders found.</td></tr>`:''}
+            </tbody>
+          </table>
+        </div>`;
+      window.__fs = s => { fs = s; draw(); };
+    };
+    draw();
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderCrewMgmt(el) {
+  try {
+    const [crew, orders] = await Promise.all([apiFetch('/users/crew'), apiFetch('/orders/all')]);
+    el.innerHTML = `<div class="page-header"><div><div class="section-title">Crew Management</div></div></div>`;
+    crew.forEach(c => {
+      const co   = orders.filter(o => o.assignedCrewId === c.crewId);
+      const done = co.filter(o => o.status === 'COMPLETED').length;
+      const act  = co.filter(o => o.status === 'ACCEPTED').length;
+      const rev  = co.filter(o => o.status === 'COMPLETED').reduce((s,o) => s + o.total, 0);
+      const d = document.createElement('div');
+      d.className = 'card mb-12';
+      d.innerHTML = `
+        <div class="flex jc-sb items-c mb-12">
+          <div class="flex items-c gap-12">
+            <div class="crew-avatar">${c.initials||c.name[0]}</div>
+            <div><div class="crew-name">${c.name}</div><div class="crew-meta">${c.crewId}</div></div>
+          </div>
+          <span style="font-size:12px;color:${c.online?'var(--green)':'var(--text-muted)'}">
+            <span class="${c.online?'online-dot':'offline-dot'}"></span>${c.online?'Online':'Offline'}
+          </span>
+        </div>
+        <div class="divider"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px">
+          <div><div style="font-size:18px;font-weight:700">${done}</div><div class="small muted">Completed</div></div>
+          <div><div style="font-size:18px;font-weight:700">${act}</div><div class="small muted">Active</div></div>
+          <div><div style="font-size:18px;font-weight:700">${co.length}</div><div class="small muted">Total</div></div>
+          <div><div style="font-size:18px;font-weight:700">₹${rev}</div><div class="small muted">Revenue</div></div>
+        </div>`;
+      el.appendChild(d);
+    });
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderAnalytics(el) {
+  try {
+    const orders = await apiFetch('/orders/all');
+    const crew   = await apiFetch('/users/crew');
+    const done   = orders.filter(o => o.status === 'COMPLETED');
+    const rev    = done.reduce((s,o) => s + o.total, 0);
+    const avg    = done.length ? Math.round(rev / done.length) : 0;
+    const ic = {};
+    orders.forEach(o => o.items.forEach(i => { ic[i.name] = (ic[i.name]||0) + i.qty; }));
+    const top = Object.entries(ic).sort((a,b) => b[1]-a[1]).slice(0,6);
+    const mx  = top[0]?.[1]||1;
+    const cs  = crew.map(c => ({
+      n: c.name.split(' ')[0],
+      v: orders.filter(o => o.assignedCrewId === c.crewId && o.status === 'COMPLETED').length
+    }));
+    const mcv = Math.max(...cs.map(c=>c.v), 1);
+    el.innerHTML = `
+      <div class="page-header"><div><div class="section-title">Analytics</div></div></div>
+      <div class="stats-grid mb-16">
+        <div class="stat-card"><div class="stat-val">₹${rev}</div><div class="stat-label">Total Revenue</div></div>
+        <div class="stat-card"><div class="stat-val">${done.length}</div><div class="stat-label">Fulfilled</div></div>
+        <div class="stat-card"><div class="stat-val">₹${avg}</div><div class="stat-label">Avg Order</div></div>
+        <div class="stat-card"><div class="stat-val">${orders.length}</div><div class="stat-label">Total Orders</div></div>
+      </div>
+      <div class="card mb-16">
+        <div class="card-header"><div class="card-title">Top Items Ordered</div></div>
+        <div class="chart-wrap">
+          ${top.map(([n,v]) => `<div class="bar-col">
+            <div class="bar" style="height:${Math.round(v/mx*100)}px"><span class="bar-count">${v}</span></div>
+            <div class="bar-lbl">${n.split(' ')[0]}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="card mb-16">
+        <div class="card-header"><div class="card-title">Crew Deliveries Completed</div></div>
+        <div class="chart-wrap">
+          ${cs.map(c => `<div class="bar-col">
+            <div class="bar" style="height:${Math.round(c.v/mcv*100)}px;opacity:.6"><span class="bar-count">${c.v}</span></div>
+            <div class="bar-lbl">${c.n}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Order Status Breakdown</div></div>
+        ${['PENDING','ACCEPTED','COMPLETED'].map(s => {
+          const cnt = orders.filter(o => o.status === s).length;
+          const pct = orders.length ? Math.round(cnt/orders.length*100) : 0;
+          return `<div style="margin-bottom:14px">
+            <div class="flex jc-sb mb-4">
+              <span style="font-size:13px;font-weight:500">${s.charAt(0)+s.slice(1).toLowerCase()}</span>
+              <span style="font-size:13px;color:var(--text-muted)">${cnt} orders · ${pct}%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+async function renderUsers(el) {
+  try {
+    const users = await apiFetch('/users/all');
+    el.innerHTML = `
+      <div class="page-header"><div><div class="section-title">Registered Users</div></div></div>
+      <div class="card table-scroll" style="padding:0;overflow:hidden">
+        <table class="dt">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+          <tbody>
+            ${!users.length
+              ? '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:24px">No users yet.</td></tr>'
+              : users.map(u => `<tr>
+                  <td style="font-weight:500">${u.name}</td>
+                  <td>${u.email}</td>
+                  <td><span class="badge badge-accepted">${u.role}</span></td>
+                </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+/* ── ADMIN: AUDIT LOGS PAGE ────────────────────────────────── */
+async function renderAuditLogs(el) {
+  try {
+    const [logs, dlogs, payments] = await Promise.all([
+      apiFetch('/orders/admin/logs'),
+      apiFetch('/orders/admin/delivery-logs'),
+      apiFetch('/orders/admin/payments'),
+    ]);
+
+    let tab = 'events';
+    const draw = () => {
+      el.innerHTML = `
+        <div class="page-header"><div><div class="section-title">Audit Logs</div>
+          <div class="section-sub">All events, delivery timelines and payment records — admin only</div></div>
+        </div>
+        <div class="flex gap-8 mb-16">
+          ${['events','delivery','payments'].map(t =>
+            `<button class="btn btn-sm ${tab===t?'btn-primary':'btn-outline'}" onclick="__tab('${t}')">${{events:'Order Events',delivery:'Delivery Timeline',payments:'Payment Records'}[t]}</button>`
+          ).join('')}
+        </div>
+
+        ${tab === 'events' ? `
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>Time</th><th>Order</th><th>Event</th><th>Performed By</th><th>Note</th></tr></thead>
+            <tbody>
+              ${!logs.length ? `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No events yet.</td></tr>` :
+                logs.map(l => `<tr>
+                  <td style="white-space:nowrap;font-size:11px">${fmt(l.eventTime)}</td>
+                  <td style="font-weight:600">${l.orderId}</td>
+                  <td><span class="badge ${l.event==='COMPLETED'?'badge-completed':l.event==='ACCEPTED'?'badge-accepted':l.event==='PLACED'?'badge-pending':'badge-cancelled'}">${l.event}</span></td>
+                  <td>${l.performedBy||'—'}</td>
+                  <td style="font-size:12px;color:var(--text-muted)">${l.note||'—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+
+        ${tab === 'delivery' ? `
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>Order</th><th>Train</th><th>ETA Given</th><th>Placed At</th><th>Accepted At</th><th>Delivered At</th><th>Accept Time</th><th>Delivery Time</th></tr></thead>
+            <tbody>
+              ${!dlogs.length ? `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted)">No delivery logs yet.</td></tr>` :
+                dlogs.map(d => `<tr>
+                  <td style="font-weight:600">${d.orderId}</td>
+                  <td>${d.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${d.trainName}</span></td>
+                  <td>${d.etaGiven||'—'}</td>
+                  <td style="font-size:12px">${fmt(d.placedAt)}</td>
+                  <td style="font-size:12px">${d.acceptedAt ? fmt(d.acceptedAt) : '—'}</td>
+                  <td style="font-size:12px">${d.deliveredAt ? fmt(d.deliveredAt) : '—'}</td>
+                  <td>${d.acceptanceDurationSeconds != null ? Math.round(d.acceptanceDurationSeconds/60) + ' min' : '—'}</td>
+                  <td>${d.deliveryDurationSeconds != null ? Math.round(d.deliveryDurationSeconds/60) + ' min' : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}
+
+        ${tab === 'payments' ? `
+        <div class="card table-scroll" style="padding:0;overflow:hidden">
+          <table class="dt">
+            <thead><tr><th>Order</th><th>Amount Paid</th><th>Uploaded By</th><th>File</th><th>Uploaded At</th><th>Screenshot</th></tr></thead>
+            <tbody>
+              ${!payments.length ? `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No payment records yet.</td></tr>` :
+                payments.map(p => `<tr>
+                  <td style="font-weight:600">${p.orderId}</td>
+                  <td>₹${p.amountPaid}</td>
+                  <td>${p.uploadedBy}</td>
+                  <td style="font-size:12px;color:var(--text-muted)">${p.fileName||'—'}</td>
+                  <td style="font-size:12px">${fmt(p.uploadedAt)}</td>
+                  <td>${p.screenshotBase64
+                    ? `<img src="${p.screenshotBase64.startsWith('data:') ? p.screenshotBase64 : 'data:image/jpeg;base64,'+p.screenshotBase64}"
+                            style="max-width:80px;max-height:60px;border-radius:4px;border:1px solid var(--border);cursor:pointer"
+                            onclick="viewFullImage(this.src)">`
+                    : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>` : ''}`;
+
+      window.__tab = t => { tab = t; draw(); };
+    };
+    draw();
+  } catch (e) { el.innerHTML = errState(e.message); }
+}
+
+function viewFullImage(src) {
+  openModal(`
+    <div class="modal-title">Payment Screenshot</div>
+    <img src="${src}" style="max-width:100%;border-radius:6px;border:1px solid var(--border)">
+  `);
+}
+
+/* ═══════════════════════════════════════
+   ORDER CARD
+═══════════════════════════════════════ */
+function orderCard(o, viewer) {
+  const d = document.createElement('div');
+  d.className = 'order-card';
+  const crew = o.assignedCrewId ? crewById(o.assignedCrewId) : null;
+  const status = o.status?.toLowerCase() || 'pending';
+  let actions = '';
+  if (viewer === 'crew') {
+    if (status === 'pending')
+      actions = `<button class="btn btn-green btn-sm" onclick="acceptOrder('${o.id}')">Accept Order</button>`;
+    else if (status === 'accepted' && o.assignedCrewId === currentUser.crewId)
+      actions = `<button class="btn btn-primary btn-sm" onclick="openUpload('${o.id}')">Upload Payment</button>`;
+  }
+  if (viewer === 'admin') {
+    if (status === 'pending')
+      actions += `<button class="btn btn-outline btn-sm" onclick="openAssign('${o.id}')">Assign Crew</button>`;
+    actions += ` <button class="btn btn-outline btn-sm" onclick="openDetail('${o.id}')">View Details</button>`;
+  }
+  d.innerHTML = `
+    <div class="order-card-header">
+      <div><div class="order-id">${o.id}</div><div class="order-time">${fmt(o.createdAt)}</div></div>
+      <span class="badge badge-${status}">${status}</span>
+    </div>
+    <div class="order-meta">
+      <div class="meta-item"><strong>${o.userName}</strong>Customer</div>
+      <div class="meta-item"><strong>${o.trainNo}</strong>Train No.</div>
+      <div class="meta-item"><strong>${o.trainName}</strong>Train Name</div>
+      <div class="meta-item"><strong>${o.currentLocation}</strong>Location</div>
+      <div class="meta-item"><strong>${o.eta}</strong>ETA</div>
+      ${crew ? `<div class="meta-item"><strong>${crew.name}</strong>Crew</div>` : ''}
+      ${o.completedAt ? `<div class="meta-item"><strong>${fmt(o.completedAt)}</strong>Completed</div>` : ''}
+    </div>
+    <div class="order-items-section">
+      ${(o.items||[]).map(i => `<div class="item-row"><span>${i.name}</span><span style="color:var(--text-muted)">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
+      <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
+    </div>
+    ${actions ? `<div class="order-actions">${actions}</div>` : ''}`;
+  return d;
+}
+
+/* ═══════════════════════════════════════
+   ACCEPT + REMINDER CYCLE
+═══════════════════════════════════════ */
+async function acceptOrder(oid) {
+  try {
+    await apiFetch('/orders/' + oid + '/accept', { method: 'PATCH' });
+    startReminders(oid);
+    toast('Order accepted. Check-in reminders set.', 'ok');
+    navigateTo('pending-orders');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function startReminders(oid) {
+  clearTimers();
+  let step = 0;
+  const INTERVAL = 20 * 60 * 1000;
+  const tid = setInterval(() => {
+    if (step >= REMINDER_STEPS.length) { clearInterval(tid); return; }
+    showReminder(REMINDER_STEPS[step], oid);
+    step++;
+  }, INTERVAL);
+  reminderTimers.push(tid);
+}
+
+function showReminder(s, oid) {
+  document.getElementById('popup-step').textContent  = s.step;
+  document.getElementById('popup-title').textContent = s.title;
+  document.getElementById('popup-body').textContent  = s.body + '\n\nOrder: ' + oid;
+  document.getElementById('popup-reminder').classList.remove('hidden');
+}
+
+function dismissPopup() {
+  document.getElementById('popup-reminder').classList.add('hidden');
+}
+
+function clearTimers() {
+  reminderTimers.forEach(t => clearInterval(t));
+  reminderTimers = [];
+}
+
+/* ═══════════════════════════════════════
+   UPLOAD PAYMENT SCREENSHOT
+═══════════════════════════════════════ */
+function openUpload(oid) {
+  openModal(`
+    <div class="modal-title">Upload Payment Screenshot</div>
+    <p class="muted small mb-16">Order ${oid} — mark as completed after uploading proof of payment.</p>
+    <div class="upload-zone">
+      <input type="file" accept="image/*" onchange="previewImg(this,'${oid}')">
+      <div class="upload-zone-icon">↑</div>
+      <p style="font-size:13px;font-weight:500">Tap to upload screenshot</p>
+      <p class="muted small mt-4">JPG or PNG</p>
+      <div id="prev-${oid}" class="upload-preview"></div>
+    </div>
+    <button class="btn btn-green btn-full mt-16" onclick="completeOrder('${oid}')">Mark Order as Completed</button>
+  `);
+}
+
+let _uploadedImageBase64 = null;
+let _uploadedFileName    = null;
+
+function previewImg(inp, oid) {
+  if (!inp.files[0]) return;
+  const file = inp.files[0];
+  _uploadedFileName = file.name;
+  const r = new FileReader();
+  r.onload = e => {
+    _uploadedImageBase64 = e.target.result;  // full data URL
+    document.getElementById('prev-'+oid).innerHTML =
+      `<img src="${e.target.result}" alt="Payment">`;
+  };
+  r.readAsDataURL(file);
+}
+
+async function completeOrder(oid) {
+  try {
+    // First save the payment screenshot to DB
+    if (_uploadedImageBase64) {
+      await apiFetch('/orders/' + oid + '/payment-screenshot', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          screenshotBase64: _uploadedImageBase64,
+          fileName: _uploadedFileName || 'payment.jpg',
+          amountPaid: 0  // amount is on the order itself
+        })
+      });
+    }
+    // Then mark as completed
+    await apiFetch('/orders/' + oid + '/complete', { method: 'PATCH' });
+    _uploadedImageBase64 = null;
+    _uploadedFileName = null;
+    clearTimers(); dismissPopup(); closeModal();
+    toast('Order completed and saved.', 'ok');
+    navigateTo('my-deliveries');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ═══════════════════════════════════════
+   ADMIN MODALS
+═══════════════════════════════════════ */
+function openAssign(oid) {
+  const opts = crewList.map(c =>
+    `<option value="${c.crewId}">${c.name}${c.online?' (Online)':''}</option>`).join('');
+  openModal(`
+    <div class="modal-title">Assign Crew — ${oid}</div>
+    <div class="form-group">
+      <label>Select crew member</label>
+      <select id="asgn-sel">${opts || '<option value="">No crew available</option>'}</select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doAssign('${oid}')">Confirm Assignment</button>
+  `);
+}
+
+async function doAssign(oid) {
+  const crewId = document.getElementById('asgn-sel').value;
+  if (!crewId) { toast('Select a crew member', 'err'); return; }
+  try {
+    await apiFetch('/orders/' + oid + '/assign', {
+      method: 'PATCH',
+      body: JSON.stringify({ crewId })
+    });
+    closeModal();
+    toast('Crew assigned.', 'ok');
+    navigateTo('all-orders');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function openDetail(oid) {
+  try {
+    const orders = await apiFetch('/orders/all');
+    const o = orders.find(x => x.id === oid);
+    if (!o) return;
+    const crew = o.assignedCrewId ? crewById(o.assignedCrewId) : null;
+    openModal(`
+      <div class="modal-title">Order ${o.id}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${[['Customer',o.userName],['Train No.',o.trainNo],['Train Name',o.trainName],
+           ['Location',o.currentLocation],['ETA',o.eta],['Status',o.status],
+           ['Crew',crew?crew.name:'Not assigned'],['Amount','₹'+o.total],
+           ['Placed',fmt(o.createdAt)],['Completed',o.completedAt?fmt(o.completedAt):'—'],
+           ['Payment',o.paymentUploaded?'Uploaded':'Pending'],
+           ['Duration', o.deliveryDurationSeconds!=null ? Math.round(o.deliveryDurationSeconds/60)+' min' : '—'],
+          ].map(([l,v]) => `<div><div class="small muted">${l}</div><div style="font-weight:500;font-size:13px">${v}</div></div>`).join('')}
+      </div>
+      <div class="divider"></div>
+      <div class="card-title mb-8">Items</div>
+      ${(o.items||[]).map(i=>`<div class="item-row"><span>${i.name}</span><span class="muted">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
+      <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
+    `);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+/* ═══════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════ */
+function openModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+function outsideModal(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function toast(msg, type='') {
+  const d = document.createElement('div');
+  d.className = 'toast ' + type;
+  d.textContent = msg;
+  document.getElementById('toast-wrap').appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+/* ═══════════════════════════════════════
+   EMPTY / ERROR STATE
+═══════════════════════════════════════ */
+function emptyState(msg) {
+  const d = document.createElement('div');
+  d.className = 'empty-state';
+  d.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><p>${msg}</p>`;
+  return d;
+}
+
+function errState(msg) {
+  return `<div class="card" style="color:var(--red);padding:24px;text-align:center">
+    <strong>Error:</strong> ${msg || 'Could not load data. Is the backend running?'}
+  </div>`;
+}
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function fmt(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'2-digit' }) +
+    ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+}
+
+window.__fs  = () => {};
+window.__tab = () => {};
+</script>
+</body>
+</html>
