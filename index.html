@@ -501,14 +501,28 @@ table.dt tbody tr:hover td { background: var(--bg); }
 
 <script>
 /* ════════════════════════════════════════════════════════
-   BACKEND URL
-   - On GitHub Pages  → uses ngrok public URL
-   - On localhost/ngrok itself → uses empty string (relative)
-   ⚠️  Update the ngrok URL below every time ngrok restarts
+   BACKEND URL CONFIGURATION
+   ════════════════════════════════════════════════════════
+   IMPORTANT: Update BACKEND_URL_GITHUB_PAGES with your actual backend!
+   
+   Options:
+   1. Local development: http://localhost:8080/api
+   2. Using ngrok: https://your-ngrok-url.ngrok-free.dev/api
+   3. Production: https://your-backend-domain.com/api
+   
+   For GitHub Pages (HTTPS only):
+   - Must use HTTPS (http:// will be blocked by browser)
+   - Use ngrok or deploy backend to HTTPS server
 ════════════════════════════════════════════════════════ */
+
+// ⚠️ UPDATE THIS WITH YOUR ACTUAL BACKEND URL (must be HTTPS for GitHub Pages)
+const BACKEND_URL_GITHUB_PAGES = 'https://your-backend-domain.com/api';
+
 const API = window.location.hostname === 'ajaisivakumar.github.io'
-  ? 'https://freckles-spectacle-expenses.ngrok-free.dev/api'
+  ? BACKEND_URL_GITHUB_PAGES
   : '/api';
+
+console.log('🔌 Using API URL:', API);
 
 /* ════════════════════════════════════════════════════════
    CONSTANTS
