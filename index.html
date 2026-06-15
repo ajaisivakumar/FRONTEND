@@ -496,33 +496,93 @@ table.dt tbody tr:hover td { background: var(--bg); }
   </div>
 </div>
 
+<!-- API CONFIGURATION MODAL -->
+<div id="api-config-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+  <div style="background: white; border-radius: 8px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+    <h2 style="margin-bottom: 12px; font-size: 18px; font-weight: 700;">Configure Backend URL</h2>
+    <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">Enter your ngrok HTTPS URL or backend domain to connect:</p>
+    <input type="text" id="api-url-input" placeholder="https://your-ngrok-url.ngrok-free.dev/api" style="margin-bottom: 16px; width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 13px;">
+    <div style="display: flex; gap: 8px;">
+      <button onclick="saveApiUrl()" style="flex: 1; padding: 10px; background: #111827; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">Save & Connect</button>
+      <button onclick="closeApiConfigModal()" style="flex: 1; padding: 10px; background: #e5e7eb; color: #111827; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOASTS -->
 <div id="toast-wrap"></div>
 
 <script>
 /* ════════════════════════════════════════════════════════
-   BACKEND URL CONFIGURATION
+   BACKEND URL CONFIGURATION (DYNAMIC)
    ════════════════════════════════════════════════════════
-   IMPORTANT: Update BACKEND_URL_GITHUB_PAGES with your actual backend!
+   This now supports dynamic configuration!
    
-   Options:
-   1. Local development: http://localhost:8080/api
-   2. Using ngrok: https://your-ngrok-url.ngrok-free.dev/api
-   3. Production: https://your-backend-domain.com/api
+   On GitHub Pages:
+   - Loads from localStorage (user can set via UI)
+   - Falls back to default if not set
    
-   For GitHub Pages (HTTPS only):
-   - Must use HTTPS (http:// will be blocked by browser)
-   - Use ngrok or deploy backend to HTTPS server
+   On localhost:
+   - Uses relative /api path (proxied to localhost:8080)
 ════════════════════════════════════════════════════════ */
 
-// ⚠️ UPDATE THIS WITH YOUR ACTUAL BACKEND URL (must be HTTPS for GitHub Pages)
-const BACKEND_URL_GITHUB_PAGES = 'https://your-backend-domain.com/api';
+// Default backend URL for GitHub Pages (user can override via UI)
+const DEFAULT_BACKEND_URL_GITHUB_PAGES = 'https://your-ngrok-url.ngrok-free.dev/api';
 
-const API = window.location.hostname === 'ajaisivakumar.github.io'
-  ? BACKEND_URL_GITHUB_PAGES
-  : '/api';
+// Get API URL based on environment
+function getApiUrl() {
+  if (window.location.hostname === 'ajaisivakumar.github.io') {
+    // On GitHub Pages: try to load from localStorage, fall back to default
+    const savedUrl = localStorage.getItem('trainserve_api_url');
+    return savedUrl || DEFAULT_BACKEND_URL_GITHUB_PAGES;
+  } else {
+    // On localhost: use relative path
+    return '/api';
+  }
+}
 
+let API = getApiUrl();
 console.log('🔌 Using API URL:', API);
+
+// Function to save API URL
+function saveApiUrl() {
+  const input = document.getElementById('api-url-input');
+  const url = input.value.trim();
+  
+  if (!url) {
+    toast('Please enter a valid URL', 'err');
+    return;
+  }
+  
+  if (!url.startsWith('https://') && !url.startsWith('http://')) {
+    toast('URL must start with https:// or http://', 'err');
+    return;
+  }
+  
+  // Save to localStorage
+  localStorage.setItem('trainserve_api_url', url);
+  API = url;
+  
+  console.log('✓ API URL saved:', API);
+  toast('Backend URL saved! Refreshing...', 'ok');
+  
+  // Close modal and reload
+  closeApiConfigModal();
+  setTimeout(() => location.reload(), 500);
+}
+
+// Function to open API config modal
+function openApiConfigModal() {
+  const modal = document.getElementById('api-config-modal');
+  const input = document.getElementById('api-url-input');
+  input.value = localStorage.getItem('trainserve_api_url') || '';
+  modal.classList.remove('hidden');
+}
+
+// Function to close API config modal
+function closeApiConfigModal() {
+  document.getElementById('api-config-modal').classList.add('hidden');
+}
 
 /* ════════════════════════════════════════════════════════
    CONSTANTS
