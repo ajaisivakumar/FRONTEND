@@ -621,16 +621,22 @@ let crewList       = [];
 ════════════════════════════════════════════════════════ */
 async function loadCrewDropdown() {
   const sel = document.getElementById('c-id');
+  const currentApi = getApiUrl();
+  if (!currentApi || currentApi.includes('your-ngrok-url')) {
+    sel.innerHTML = '<option value="">— Configure backend URL first —</option>';
+    return;
+  }
   try {
-    // API already contains '/api', so path here is just '/auth/crew-list'
-    const res = await fetch(API + '/auth/crew-list');
+    const res = await fetch(currentApi + '/auth/crew-list', {
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const list = await res.json();
     sel.innerHTML = '<option value="">— Select —</option>';
     list.forEach((c, i) => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = 'Crew ' + (i + 1) + ' \u2014 ' + c.name;
+      opt.textContent = 'Crew ' + (i + 1) + ' — ' + c.name;
       sel.appendChild(opt);
     });
   } catch (e) {
@@ -639,8 +645,8 @@ async function loadCrewDropdown() {
   }
 }
 
-// Run on page load
-loadCrewDropdown();
+// Run on page load — slight delay to ensure API url is set
+setTimeout(loadCrewDropdown, 300);
 
 /* ════════════════════════════════════════════════════════
    API HELPER — all paths are relative to API constant
