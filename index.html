@@ -222,13 +222,21 @@ textarea { resize: vertical; min-height: 64px; }
 .mob-nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
 
 /* ─── Login / Auth page ─── */
+/* ─── Login / Auth page ─── */
 #auth-page {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  padding: 20px; background: var(--bg);
+  padding: 20px; position: relative; overflow: hidden; background: #111;
 }
-.auth-box { width: 100%; max-width: 400px; }
-.auth-logo { font-weight: 700; font-size: 20px; letter-spacing: -.3px; margin-bottom: 2px; color: var(--text); }
-.auth-tagline { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+#auth-page::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background-image: url('LOGGIN-BACKGROUND.jpg');
+  background-size: cover; background-position: center;
+  filter: brightness(0.42);
+}
+.auth-box { position: relative; z-index: 1; width: 100%; max-width: 400px; }
+.auth-logo { font-weight: 700; font-size: 20px; letter-spacing: -.3px; margin-bottom: 2px; color: #ffffff !important; }
+.auth-tagline { font-size: 13px; color: rgba(255,255,255,0.75) !important; margin-bottom: 28px; }
 
 .role-selector { display: flex; gap: 8px; margin-bottom: 20px; }
 .role-btn {
@@ -237,21 +245,21 @@ textarea { resize: vertical; min-height: 64px; }
   font-size: 12px; font-weight: 600; cursor: pointer; text-align: center;
   color: var(--text-muted); transition: all .12s; font-family: var(--font);
 }
-.role-btn:hover { border-color: var(--border-md); color: var(--text); background: var(--bg); }
-.role-btn.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.role-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.role-btn.active { background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.6); }
 
-.auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
-.auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; gap: 0; }
+.auth-card { background: rgba(0,0,0,0.55) !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.auth-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 20px; gap: 0; }
 .auth-tab {
   flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 500;
   cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent;
   margin-bottom: -1px; transition: all .12s; background: none; border-top: none; border-left: none; border-right: none;
   font-family: var(--font);
 }
-.auth-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.auth-tab.active { color: #ffffff; border-bottom-color: #ffffff; font-weight: 600; }
 .auth-form-pane { display: none; }
 .auth-form-pane.active { display: block; }
-.auth-help { font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center; }
+.auth-help { font-size: 12px; color: rgba(255,255,255,0.6) !important; margin-top: 12px; text-align: center; }
 
 /* ─── Order cards ─── */
 .order-card {
