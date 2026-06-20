@@ -14,6 +14,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
 
+
 /* ─── Tokens ─── */
 :root {
   --bg:          #f4f5f7;
@@ -289,6 +290,45 @@ textarea { resize: vertical; min-height: 64px; }
 .item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: var(--text-2); }
 .item-row.total-row { font-weight: 600; color: var(--text); padding-top: 8px; margin-top: 4px; border-top: 1px solid var(--border); font-size: 13px; }
 .order-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+
+
+
+
+  
+  .qty-display {
+  margin-top: 10px; width: 100%; text-align: center;
+  font-size: 12px; font-weight: 600; padding: 6px 0;
+  border-radius: var(--radius-sm); background: var(--bg); color: var(--text-muted);
+}
+.product-tile.selected .qty-display { background: var(--accent); color: var(--accent-fg); }
+
+.qty-modal-display {
+  font-size: 48px; font-weight: 700; text-align: center; margin: 20px 0 16px;
+  letter-spacing: -1px;
+}
+.qty-chip-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+.qty-chip {
+  padding: 12px 0; border-radius: var(--radius-sm); border: 1px solid var(--border-md);
+  background: var(--surface); text-align: center; font-weight: 600; font-size: 14px;
+  cursor: pointer; transition: all .12s; color: var(--text-2);
+}
+.qty-chip:hover { border-color: var(--accent); background: var(--bg); }
+.qty-chip.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.qty-manual-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.qty-manual-row input { text-align: center; font-size: 18px; font-weight: 600; }
+.qty-step-btn {
+  width: 44px; height: 44px; flex-shrink: 0; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-md); background: var(--bg); font-size: 20px;
+  cursor: pointer; color: var(--text-2);
+}
+
+
+
+
+
+
+  
 
 /* ─── Product grid ─── */
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
@@ -959,41 +999,19 @@ function renderPlaceOrder(el) {
 function buildProductGrid() {
   const grid = document.getElementById('product-grid');
   PRODUCTS.forEach(p => {
+    const qty = orderCart[p.id] || 0;
     const d = document.createElement('div');
-    d.className = 'product-tile' + (orderCart[p.id] ? ' selected' : '');
+    d.className = 'product-tile' + (qty ? ' selected' : '');
     d.id = 'pt-' + p.id;
+    d.onclick = () => openQtyModal(p.id);
     d.innerHTML = `
       <div class="prod-img">${(p.img||p.imageUrl) ? `<img src="${p.img||p.imageUrl}" alt="${p.name}" loading="lazy" onerror="this.parentElement.textContent='${p.icon||'📦'}'">` : (p.icon||'📦')}</div>
       <div class="prod-name">${p.name}</div>
       <div class="prod-sub">${p.unit}</div>
       <div class="prod-price">₹${p.price}</div>
-      <div class="qty-row">
-        <button class="qty-btn" onclick="event.stopPropagation();chQty('${p.id}',-1)">−</button>
-        <input class="qty-num" type="number" id="q-${p.id}" value="${orderCart[p.id]||0}" min="0"
-          onclick="event.stopPropagation()"
-          onchange="event.stopPropagation();setQty('${p.id}', this.value)">
-        <button class="qty-btn" onclick="event.stopPropagation();chQty('${p.id}',1)">+</button>
-      </div>
-      <button class="btn btn-outline btn-xs mt-8" style="width:100%" onclick="event.stopPropagation();bulkPrompt('${p.id}')">Bulk add</button>`;
+      <div class="qty-display" id="qd-${p.id}">${qty ? `${qty} added` : 'Tap to add'}</div>`;
     grid.appendChild(d);
   });
-}
-
-function setQty(pid, value) {
-  const nv = Math.max(0, parseInt(value) || 0);
-  if (nv === 0) delete orderCart[pid]; else orderCart[pid] = nv;
-  document.getElementById('pt-'+pid)?.classList.toggle('selected', nv > 0);
-  refreshSummary();
-}
-
-function bulkPrompt(pid) {
-  const p = PRODUCTS.find(x => x.id === pid);
-  const current = orderCart[pid] || 0;
-  const val = prompt(`Enter quantity for ${p.name}:`, current);
-  if (val === null) return;
-  setQty(pid, val);
-  const inp = document.getElementById('q-'+pid);
-  if (inp) inp.value = orderCart[pid] || 0;
 }
 
 function chQty(pid, d) {
@@ -1614,6 +1632,67 @@ function fmt(iso) {
   return d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'2-digit' }) +
     ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
 }
+
+
+
+let _qtyModalPid = null;
+
+function openQtyModal(pid) {
+  _qtyModalPid = pid;
+  const p = PRODUCTS.find(x => x.id === pid);
+  const current = orderCart[pid] || 0;
+  const presets = [10, 25, 50, 100, 250, 500];
+  openModal(`
+    <div class="modal-title">${p.name}</div>
+    <p class="muted small">${p.unit} · ₹${p.price} each</p>
+    <div class="qty-modal-display" id="qty-modal-num">${current}</div>
+    <div class="qty-chip-grid">
+      ${presets.map(n => `<div class="qty-chip" onclick="setQtyModal(${n})">${n}</div>`).join('')}
+    </div>
+    <div class="qty-manual-row">
+      <button class="qty-step-btn" onclick="bumpQtyModal(-10)">−10</button>
+      <input type="number" id="qty-modal-input" value="${current}" min="0"
+        oninput="syncQtyModal(this.value)">
+      <button class="qty-step-btn" onclick="bumpQtyModal(10)">+10</button>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="confirmQtyModal()">
+      ${current ? 'Update Order' : 'Add to Order'}
+    </button>
+    ${current ? `<button class="btn btn-outline btn-full mt-8" onclick="setQtyModal(0); confirmQtyModal()">Remove from Order</button>` : ''}
+  `);
+}
+
+function setQtyModal(n) {
+  document.getElementById('qty-modal-num').textContent = n;
+  document.getElementById('qty-modal-input').value = n;
+}
+
+function syncQtyModal(val) {
+  const n = Math.max(0, parseInt(val) || 0);
+  document.getElementById('qty-modal-num').textContent = n;
+}
+
+function bumpQtyModal(delta) {
+  const inp = document.getElementById('qty-modal-input');
+  const n = Math.max(0, (parseInt(inp.value) || 0) + delta);
+  inp.value = n;
+  document.getElementById('qty-modal-num').textContent = n;
+}
+
+function confirmQtyModal() {
+  const n = Math.max(0, parseInt(document.getElementById('qty-modal-input').value) || 0);
+  if (n === 0) delete orderCart[_qtyModalPid]; else orderCart[_qtyModalPid] = n;
+  closeModal();
+  const tile = document.getElementById('pt-'+_qtyModalPid);
+  const disp = document.getElementById('qd-'+_qtyModalPid);
+  if (tile) tile.classList.toggle('selected', n > 0);
+  if (disp) disp.textContent = n ? `${n} added` : 'Tap to add';
+  refreshSummary();
+}
+
+
+  
+
 
 window.__fs  = () => {};
 window.__tab = () => {};
