@@ -963,17 +963,37 @@ function buildProductGrid() {
     d.className = 'product-tile' + (orderCart[p.id] ? ' selected' : '');
     d.id = 'pt-' + p.id;
     d.innerHTML = `
-      <div class="prod-img">${p.img ? `<img src="${p.img}" alt="${p.name}" loading="lazy" onerror="this.parentElement.textContent='${p.icon}'">` : p.icon}</div>
+      <div class="prod-img">${(p.img||p.imageUrl) ? `<img src="${p.img||p.imageUrl}" alt="${p.name}" loading="lazy" onerror="this.parentElement.textContent='${p.icon||'📦'}'">` : (p.icon||'📦')}</div>
       <div class="prod-name">${p.name}</div>
       <div class="prod-sub">${p.unit}</div>
       <div class="prod-price">₹${p.price}</div>
       <div class="qty-row">
         <button class="qty-btn" onclick="event.stopPropagation();chQty('${p.id}',-1)">−</button>
-        <input class="qty-num" type="number" id="q-${p.id}" value="${orderCart[p.id]||0}" min="0" readonly>
+        <input class="qty-num" type="number" id="q-${p.id}" value="${orderCart[p.id]||0}" min="0"
+          onclick="event.stopPropagation()"
+          onchange="event.stopPropagation();setQty('${p.id}', this.value)">
         <button class="qty-btn" onclick="event.stopPropagation();chQty('${p.id}',1)">+</button>
-      </div>`;
+      </div>
+      <button class="btn btn-outline btn-xs mt-8" style="width:100%" onclick="event.stopPropagation();bulkPrompt('${p.id}')">Bulk add</button>`;
     grid.appendChild(d);
   });
+}
+
+function setQty(pid, value) {
+  const nv = Math.max(0, parseInt(value) || 0);
+  if (nv === 0) delete orderCart[pid]; else orderCart[pid] = nv;
+  document.getElementById('pt-'+pid)?.classList.toggle('selected', nv > 0);
+  refreshSummary();
+}
+
+function bulkPrompt(pid) {
+  const p = PRODUCTS.find(x => x.id === pid);
+  const current = orderCart[pid] || 0;
+  const val = prompt(`Enter quantity for ${p.name}:`, current);
+  if (val === null) return;
+  setQty(pid, val);
+  const inp = document.getElementById('q-'+pid);
+  if (inp) inp.value = orderCart[pid] || 0;
 }
 
 function chQty(pid, d) {
