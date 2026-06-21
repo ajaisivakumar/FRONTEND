@@ -405,8 +405,11 @@ textarea { resize: vertical; min-height: 64px; }
 .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
 
 /* ─── Data table ─── */
-.table-scroll { overflow-x: auto; }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 table.dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+@media (max-width: 680px) {
+  table.dt { min-width: 640px; }
+}
 table.dt thead th { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; background: var(--surface-2); }
 table.dt tbody td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 table.dt tbody tr:last-child td { border-bottom: none; }
@@ -973,6 +976,16 @@ const NAV = {
     { id:'add-product',   label:'Add Product',    icon:'plus'  },
   ],
 };
+const MOBILE_NAV = {
+  user:  NAV.user,
+  crew:  NAV.crew,
+  admin: [
+    { id:'dashboard',     label:'Dashboard',      icon:'dash'  },
+    { id:'all-orders',    label:'All Orders',     icon:'list'  },
+    { id:'place-order',   label:'New Order',      icon:'plus'  },
+    { id:'analytics',     label:'Analytics',      icon:'chart' },
+  ],
+};
 
 // Restore session if page was refreshed
 (async function restoreSession() {
@@ -995,6 +1008,7 @@ function launchApp() {
 function buildNav() {
   const role  = currentUser.role.toLowerCase();
   const items = NAV[role] || NAV.user;
+  const mobItems = MOBILE_NAV[role] || MOBILE_NAV.user;
   const sb = document.getElementById('sidebar');
   const mn = document.getElementById('mob-nav');
   sb.innerHTML = ''; mn.innerHTML = '';
@@ -1002,6 +1016,8 @@ function buildNav() {
     sb.innerHTML += `<div class="sidebar-item" id="si-${it.id}" onclick="navigateTo('${it.id}')">
       <span class="icon">${ICONS[it.icon]}</span> ${it.label}
     </div>`;
+  });
+  mobItems.forEach(it => {
     mn.innerHTML += `<div class="mob-nav-item" id="mi-${it.id}" onclick="navigateTo('${it.id}')">
       <span class="icon">${ICONS[it.icon]}</span>${it.label}
     </div>`;
