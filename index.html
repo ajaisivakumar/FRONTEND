@@ -1088,7 +1088,7 @@ function renderAddProduct(el) {
       <div class="section-sub">Add new items, edit pricing, or mark items out of stock.</div></div>
       <button class="btn btn-primary btn-sm" onclick="openProductFormModal()">+ Add Product</button>
     </div>
-    <div class="card table-scroll" style="padding:0;overflow:hidden">
+    <div class="card table-scroll" style="padding:0;overflow-x:auto">
       <table class="dt">
         <thead><tr><th>Image</th><th>Name</th><th>Unit</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
         <tbody>
@@ -1470,7 +1470,7 @@ async function renderAllOrders(el) {
             `<button class="btn btn-sm ${fs===s?'btn-primary':'btn-outline'}" onclick="__fs('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
           ).join('')}
         </div>
-        <div class="card table-scroll" style="padding:0;overflow:hidden">
+        <div class="card table-scroll" style="padding:0;overflow-x:auto">
           <table class="dt">
             <thead><tr><th>ID</th><th>Customer</th><th>Train</th><th>ETA</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
@@ -1593,7 +1593,7 @@ async function renderUsers(el) {
     const users = await apiFetch('/users/all');
     el.innerHTML = `
       <div class="page-header"><div><div class="section-title">Registered Users</div></div></div>
-      <div class="card table-scroll" style="padding:0;overflow:hidden">
+      <div class="card table-scroll" style="padding:0;overflow-x:auto">
         <table class="dt">
           <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
           <tbody>
@@ -1629,7 +1629,7 @@ async function renderAuditLogs(el) {
           ).join('')}
         </div>
         ${tab === 'events' ? `
-        <div class="card table-scroll" style="padding:0;overflow:hidden">
+        <div class="card table-scroll" style="padding:0;overflow-x:auto">
           <table class="dt">
             <thead><tr><th>Time</th><th>Order</th><th>Event</th><th>Performed By</th><th>Note</th></tr></thead>
             <tbody>
@@ -1645,7 +1645,7 @@ async function renderAuditLogs(el) {
           </table>
         </div>` : ''}
         ${tab === 'delivery' ? `
-        <div class="card table-scroll" style="padding:0;overflow:hidden">
+        <div class="card table-scroll" style="padding:0;overflow-x:auto">
           <table class="dt">
             <thead><tr><th>Order</th><th>Train</th><th>ETA Given</th><th>Placed At</th><th>Accepted At</th><th>Delivered At</th><th>Accept Time</th><th>Delivery Time</th></tr></thead>
             <tbody>
@@ -1664,7 +1664,7 @@ async function renderAuditLogs(el) {
           </table>
         </div>` : ''}
         ${tab === 'payments' ? `
-        <div class="card table-scroll" style="padding:0;overflow:hidden">
+        <div class="card table-scroll" style="padding:0;overflow-x:auto">
           <table class="dt">
             <thead><tr><th>Order</th><th>Amount Paid</th><th>Uploaded By</th><th>File</th><th>Uploaded At</th><th>Screenshot</th></tr></thead>
             <tbody>
