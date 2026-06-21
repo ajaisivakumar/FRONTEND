@@ -360,7 +360,38 @@ textarea { resize: vertical; min-height: 64px; }
 
 
   
+/* ------------------eta------------*/
 
+
+.clock-time-display {
+  text-align: center; font-size: 32px; font-weight: 700; margin: 8px 0 20px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.clock-time-display span { cursor: pointer; padding: 2px 8px; border-radius: 6px; color: var(--text-muted); }
+.clock-time-display span.active { color: var(--text); background: var(--bg); }
+.clock-ampm-toggle { display: flex; flex-direction: column; gap: 2px; margin-left: 14px; }
+.clock-ampm-toggle button {
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+  border: 1px solid var(--border-md); background: var(--surface); cursor: pointer; color: var(--text-muted);
+}
+.clock-ampm-toggle button.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.clock-face {
+  position: relative; width: 220px; height: 220px; margin: 0 auto;
+  border-radius: 50%; background: var(--bg); border: 1px solid var(--border);
+}
+.clock-center {
+  position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+  background: var(--accent); border-radius: 50%; transform: translate(-50%,-50%);
+}
+.clock-num {
+  position: absolute; width: 36px; height: 36px; margin: -18px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-2);
+  transition: all .12s;
+}
+.clock-num:hover { background: var(--border); }
+.clock-num.active { background: var(--accent); color: var(--accent-fg); }
 
 
 
@@ -1054,24 +1085,73 @@ function navigateTo(page) {
 /* ════════════════════════════════════════════════════════
    ETA INPUT
 ════════════════════════════════════════════════════════ */
+let _selectedHour = null, _selectedMinute = null, _selectedAmPm = 'AM', _clockMode = 'hour';
+
 function etaHTML() {
-  return `<div class="eta-wrap">
-    <input type="time" id="po-eta" onchange="updateAmPm()" oninput="updateAmPm()">
-    <span class="eta-ampm-badge" id="eta-ampm">--</span>
+  return `<div class="eta-wrap" onclick="openClockPicker()">
+    <input type="text" id="po-eta-display" placeholder="Select time" readonly style="cursor:pointer">
+    <span class="eta-ampm-badge">🕐</span>
   </div>`;
 }
-function updateAmPm() {
-  const v = document.getElementById('po-eta')?.value;
-  if (!v) { document.getElementById('eta-ampm').textContent = '--'; return; }
-  document.getElementById('eta-ampm').textContent = parseInt(v.split(':')[0]) >= 12 ? 'PM' : 'AM';
-}
+
 function getEta() {
-  const v = document.getElementById('po-eta')?.value;
-  if (!v) return '';
-  const [H, M] = v.split(':').map(Number);
-  const ampm = H >= 12 ? 'PM' : 'AM';
-  const hr   = H % 12 || 12;
-  return `${String(hr).padStart(2,'0')}:${String(M).padStart(2,'0')} ${ampm}`;
+  return document.getElementById('po-eta-display')?.value || '';
+}
+
+function openClockPicker() {
+  _clockMode = 'hour';
+  _selectedHour = _selectedHour || 12;
+  _selectedMinute = _selectedMinute ?? 0;
+  openModal(buildClockHTML());
+}
+
+function buildClockHTML() {
+  const numbers = _clockMode === 'hour'
+    ? [12,1,2,3,4,5,6,7,8,9,10,11]
+    : [0,5,10,15,20,25,30,35,40,45,50,55];
+
+  const dots = numbers.map((n, i) => {
+    const angle = (i * 30 - 90) * Math.PI / 180;
+    const x = 110 + 85 * Math.cos(angle);
+    const y = 110 + 85 * Math.sin(angle);
+    const isSelected = _clockMode === 'hour' ? n === _selectedHour : n === _selectedMinute;
+    return `<div class="clock-num${isSelected ? ' active' : ''}" style="left:${x}px;top:${y}px"
+      onclick="pickClockValue(${n})">${String(n).padStart(_clockMode==='minute'?2:1,'0')}</div>`;
+  }).join('');
+
+  return `
+    <div class="modal-title">Select Arrival Time</div>
+    <div class="clock-time-display">
+      <span class="${_clockMode==='hour'?'active':''}" onclick="_clockMode='hour';openModal(buildClockHTML())">${String(_selectedHour).padStart(2,'0')}</span>
+      :
+      <span class="${_clockMode==='minute'?'active':''}" onclick="_clockMode='minute';openModal(buildClockHTML())">${String(_selectedMinute).padStart(2,'0')}</span>
+      <div class="clock-ampm-toggle">
+        <button class="${_selectedAmPm==='AM'?'active':''}" onclick="_selectedAmPm='AM';openModal(buildClockHTML())">AM</button>
+        <button class="${_selectedAmPm==='PM'?'active':''}" onclick="_selectedAmPm='PM';openModal(buildClockHTML())">PM</button>
+      </div>
+    </div>
+    <div class="clock-face">
+      <div class="clock-center"></div>
+      ${dots}
+    </div>
+    <button class="btn btn-primary btn-full mt-16" onclick="confirmClockTime()">Confirm Time</button>`;
+}
+
+function pickClockValue(n) {
+  if (_clockMode === 'hour') {
+    _selectedHour = n;
+    _clockMode = 'minute';
+  } else {
+    _selectedMinute = n;
+  }
+  openModal(buildClockHTML());
+}
+
+function confirmClockTime() {
+  const h = String(_selectedHour).padStart(2,'0');
+  const m = String(_selectedMinute).padStart(2,'0');
+  document.getElementById('po-eta-display').value = `${h}:${m} ${_selectedAmPm}`;
+  closeModal();
 }
 
 
