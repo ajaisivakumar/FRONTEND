@@ -650,6 +650,11 @@ function getApiUrl() {
   }
 }
 
+  
+let orderType = 'train'; // 'train' or 'stall'
+
+
+  
 let API = getApiUrl();
 console.log('🔌 Using API URL:', API);
 
@@ -1207,12 +1212,22 @@ function deleteProduct(id) {
 ════════════════════════════════════════════════════════ */
 function renderPlaceOrder(el) {
   orderCart = {};
+  orderType = 'train';
   el.innerHTML = `
     <div class="page-header">
       <div><div class="section-title">New Order</div>
-      <div class="section-sub">Fill in train details and select items below.</div></div>
+      <div class="section-sub">Tell us who's ordering, then select items below.</div></div>
     </div>
+
     <div class="card mb-16">
+      <div class="card-header"><div class="card-title">Who is placing this order?</div></div>
+      <div class="role-selector">
+        <button class="role-btn active" id="ot-train" onclick="setOrderType('train')">Train Passenger / Pantry Coordinator</button>
+        <button class="role-btn" id="ot-stall" onclick="setOrderType('stall')">Stall Owner</button>
+      </div>
+    </div>
+
+    <div class="card mb-16" id="train-details-card">
       <div class="card-header"><div class="card-title">Train & Passenger Details</div></div>
       <div class="form-row">
         <div class="form-group"><label>Passenger Name</label>
@@ -1228,15 +1243,26 @@ function renderPlaceOrder(el) {
       </div>
       <div class="form-group"><label>Expected Arrival Time at Delivery Station</label>${etaHTML()}</div>
     </div>
+
+    <div class="card mb-16 hidden" id="stall-details-card">
+      <div class="card-header"><div class="card-title">Stall Details</div></div>
+      <div class="form-group"><label>Name of the Ordering Person</label>
+        <input type="text" id="po-stallperson" placeholder="Full name" value="${currentUser.name}"></div>
+      <div class="form-group"><label>Name of the Stall</label>
+        <input type="text" id="po-stallname" placeholder="e.g. Sharma Tea Stall"></div>
+      <div class="form-group"><label>Stall Location <span class="muted">(optional)</span></label>
+        <input type="text" id="po-stalllocation" placeholder="e.g. Platform 2, near entrance"></div>
+    </div>
+
     <div class="card mb-16">
-  <div class="card-header"><div class="card-title">Select Items</div>
-    <div class="card-subtitle">Tap an item to add it to your order</div></div>
-  <div class="form-group">
-    <input type="text" id="product-search" placeholder="Search products… (e.g. 'lays', 'water', 'ice cream')"
-      oninput="buildProductGrid(this.value)">
-  </div>
-  <div class="product-grid" id="product-grid"></div>
-</div>
+      <div class="card-header"><div class="card-title">Select Items</div>
+        <div class="card-subtitle">Tap an item to add it to your order</div></div>
+      <div class="form-group">
+        <input type="text" id="product-search" placeholder="Search products… (e.g. 'lays', 'water', 'ice cream')"
+          oninput="buildProductGrid(this.value)">
+      </div>
+      <div class="product-grid" id="product-grid"></div>
+    </div>
     <div class="card" id="summary-card">
       <div class="card-header"><div class="card-title">Order Summary</div></div>
       <div id="summary-body"><p class="muted small">No items selected yet.</p></div>
@@ -1249,7 +1275,13 @@ function renderPlaceOrder(el) {
   buildProductGrid();
 }
 
-
+function setOrderType(type) {
+  orderType = type;
+  document.getElementById('ot-train').classList.toggle('active', type === 'train');
+  document.getElementById('ot-stall').classList.toggle('active', type === 'stall');
+  document.getElementById('train-details-card').classList.toggle('hidden', type !== 'train');
+  document.getElementById('stall-details-card').classList.toggle('hidden', type !== 'stall');
+}
 
 
   
@@ -1320,23 +1352,36 @@ function refreshSummary() {
 }
 
 async function submitOrder() {
-  const name  = document.getElementById('po-name')?.value.trim();
-  const tno   = document.getElementById('po-trainno')?.value.trim();
-  const tname = document.getElementById('po-trainname')?.value.trim();
-  const loc   = document.getElementById('po-location')?.value.trim();
-  const eta   = getEta();
-  if (!name || !tno || !tname || !loc) { toast('Please fill in all train details', 'err'); return; }
-  if (!eta) { toast('Please select the expected arrival time', 'err'); return; }
+  const eta = orderType === 'train' ? getEta() : '';
+  let payload;
+
+  if (orderType === 'train') {
+    const name  = document.getElementById('po-name')?.value.trim();
+    const tno   = document.getElementById('po-trainno')?.value.trim();
+    const tname = document.getElementById('po-trainname')?.value.trim();
+    const loc   = document.getElementById('po-location')?.value.trim();
+    if (!name || !tno || !tname || !loc) { toast('Please fill in all train details', 'err'); return; }
+    if (!eta) { toast('Please select the expected arrival time', 'err'); return; }
+    payload = { orderType: 'train', userName: name, trainNo: tno, trainName: tname, currentLocation: loc, eta };
+  } else {
+    const person = document.getElementById('po-stallperson')?.value.trim();
+    const stall  = document.getElementById('po-stallname')?.value.trim();
+    const loc    = document.getElementById('po-stalllocation')?.value.trim() || '';
+    if (!person || !stall) { toast('Please fill in the stall owner name and stall name', 'err'); return; }
+    payload = { orderType: 'stall', userName: person, stallName: stall, stallLocation: loc, trainNo: '', trainName: stall, currentLocation: loc || stall, eta: 'N/A' };
+  }
+
   if (!Object.keys(orderCart).length) { toast('Select at least one item', 'err'); return; }
   const items = Object.keys(orderCart).map(id => {
     const p = PRODUCTS.find(x => x.id === id);
     return { productId: id, name: p.name, qty: orderCart[id], price: p.price };
   });
+
   try {
     document.getElementById('submit-btn').disabled = true;
     const order = await apiFetch('/orders', {
       method: 'POST',
-      body: JSON.stringify({ userName: name, trainNo: tno, trainName: tname, currentLocation: loc, eta, items })
+      body: JSON.stringify({ ...payload, items })
     });
     toast('Order placed — ID: ' + order.id, 'ok');
     orderCart = {};
