@@ -325,6 +325,42 @@ textarea { resize: vertical; min-height: 64px; }
 
 
 
+/* ─── Hamburger menu (mobile) ─── */
+.hamburger-btn {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  padding: 8px; margin-right: 4px; color: var(--text);
+}
+.hamburger-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; }
+
+@media (max-width: 680px) {
+  .hamburger-btn { display: flex; align-items: center; justify-content: center; }
+
+  .sidebar {
+    display: flex !important;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 250px;
+    z-index: 150;
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    box-shadow: var(--shadow);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 140;
+  }
+  .sidebar-backdrop.show { display: block; }
+}
+
+
+
+  
+
 
 
 
@@ -531,17 +567,23 @@ table.dt tbody tr:hover td { background: var(--bg); }
 <!-- MAIN APP -->
 <div id="app" class="hidden">
   <div class="topbar">
-    <div class="topbar-brand">TrainServe <span id="topbar-role-tag"></span></div>
+  <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="topbar-brand">TrainServe <span id="topbar-role-tag"></span></div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbar-user"></span>
       <button class="btn btn-outline btn-sm" onclick="logout()">Sign out</button>
     </div>
   </div>
-  <div class="app-layout">
+<div class="app-layout">
     <nav class="sidebar" id="sidebar"></nav>
-    <main class="main-content" id="main-content"></main>
-  </div>
-  <nav class="mob-nav" id="mob-nav"></nav>
+    <div class="app-layout">
+        <nav class="sidebar" id="sidebar"></nav>
+        <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+        <main class="main-content" id="main-content"></main>
+    </div>
+    <nav class="mob-nav" id="mob-nav"></nav>
 </div>
 
 <!-- MODAL -->
@@ -968,6 +1010,8 @@ function buildNav() {
 
 function navigateTo(page) {
   currentPage = page;
+  document.getElementById('sidebar')?.classList.remove('mobile-open');
+  document.getElementById('sidebar-backdrop')?.classList.remove('show');
   document.querySelectorAll('.sidebar-item,.mob-nav-item').forEach(e => e.classList.remove('active'));
   document.getElementById('si-'+page)?.classList.add('active');
   document.getElementById('mi-'+page)?.classList.add('active');
@@ -1925,9 +1969,11 @@ function confirmQtyModal() {
   refreshSummary();
 }
 
-
   
-
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mobile-open');
+  document.getElementById('sidebar-backdrop').classList.toggle('show');
+}
 
 window.__fs  = () => {};
 window.__tab = () => {};
