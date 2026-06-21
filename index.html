@@ -652,7 +652,7 @@ function closeApiConfigModal() {
 
 
   
-const PRODUCTS = [
+let PRODUCTS = [
   { id:'wb1', name:'Water Bottle', icon:'💧', img:'assets/products/RAILNEER.jpg', price:20, unit:'1 L' },
   { id:'lays-blue',   name:'Lays Blue',   icon:'🍟', img:'assets/products/LAYS-BLUE.jpg',   price:20, unit:'Pack' },
   { id:'lays-red',    name:'Lays Red',    icon:'🍟', img:'assets/products/LAYS-RED.jpg',    price:20, unit:'Pack' },
@@ -669,6 +669,21 @@ const PRODUCTS = [
   { id:'strawberry', name:'Strawberry Ice Cream', icon:'🍨', img:'assets/products/CAVINS-STRAWBERRY.jpg', price:40, unit:'Cup' },
   { id:'vanila', name:'Vanila Ice Cream', icon:'🍨', img:'assets/products/CAVINS-VANILA.jpg', price:40, unit:'Cup' }
 ];
+  
+// Load admin-added products from localStorage and merge
+  
+(function loadCustomProducts() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+    PRODUCTS = [...PRODUCTS, ...saved];
+  } catch { /* ignore */ }
+})();
+
+function saveCustomProduct(product) {
+  const saved = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+  saved.push(product);
+  localStorage.setItem('trainserve_custom_products', JSON.stringify(saved));
+}
 
 const REMINDER_STEPS = [
   { step:'Step 1 of 3', title:'Are all items packed?',          body:'Verify every item in this order is packed and ready.' },
@@ -871,6 +886,7 @@ const NAV = {
     { id:'analytics',     label:'Analytics',      icon:'chart' },
     { id:'users-page',    label:'Users',          icon:'users' },
     { id:'audit-logs',    label:'Audit Logs',     icon:'log'   },
+    { id:'add-product',   label:'Add Product',    icon:'plus'  },
   ],
 };
 
@@ -927,6 +943,7 @@ function navigateTo(page) {
     'analytics':      renderAnalytics,
     'users-page':     renderUsers,
     'audit-logs':     renderAuditLogs,
+    'add-product':    renderAddProduct,
   })[page]?.(mc);
 }
 
@@ -953,6 +970,96 @@ function getEta() {
   return `${String(hr).padStart(2,'0')}:${String(M).padStart(2,'0')} ${ampm}`;
 }
 
+
+
+
+
+  /* ════════════════════════════════════════════════════════
+   PAGE: ADD PRODUCT (admin only, add-only, case pricing)
+════════════════════════════════════════════════════════ */
+function renderAddProduct(el) {
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="section-title">Add Product</div>
+      <div class="section-sub">New items are priced per case and split automatically per piece.</div></div>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="ap-name" placeholder="e.g. Lays Magic Masala">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Case Price (₹)</label>
+          <input type="number" id="ap-caseprice" placeholder="e.g. 600" min="0" oninput="updateApPreview()">
+        </div>
+        <div class="form-group">
+          <label>Pieces per Case</label>
+          <input type="number" id="ap-pieces" placeholder="e.g. 30" min="1" oninput="updateApPreview()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Product Image URL</label>
+        <input type="text" id="ap-img" placeholder="https://i.ibb.co/yourimage.jpg">
+        <p class="muted small mt-4">Upload your photo to <a href="https://imgbb.com" target="_blank" style="color:var(--text)">imgbb.com</a> or <a href="https://postimages.org" target="_blank" style="color:var(--text)">postimages.org</a> (free), then paste the direct image link here.</p>
+      </div>
+      <div class="divider"></div>
+      <div id="ap-preview" class="muted small">Fill in case price and pieces to see the per-unit price.</div>
+      <button class="btn btn-primary btn-full mt-16" onclick="submitNewProduct()">Add Product</button>
+    </div>`;
+}
+
+function updateApPreview() {
+  const caseprice = parseFloat(document.getElementById('ap-caseprice').value);
+  const pieces    = parseInt(document.getElementById('ap-pieces').value);
+  const preview = document.getElementById('ap-preview');
+  if (!caseprice || !pieces || pieces < 1) {
+    preview.textContent = 'Fill in case price and pieces to see the per-unit price.';
+    return;
+  }
+  const perUnit = Math.round((caseprice / pieces) * 100) / 100;
+  preview.innerHTML = `Per-unit price: <strong style="color:var(--text)">₹${perUnit}</strong> &nbsp;(₹${caseprice} ÷ ${pieces} pcs)`;
+}
+
+function submitNewProduct() {
+  const name      = document.getElementById('ap-name').value.trim();
+  const caseprice = parseFloat(document.getElementById('ap-caseprice').value);
+  const pieces    = parseInt(document.getElementById('ap-pieces').value);
+  const img       = document.getElementById('ap-img').value.trim();
+
+  if (!name) { toast('Enter a product name', 'err'); return; }
+  if (!caseprice || caseprice <= 0) { toast('Enter a valid case price', 'err'); return; }
+  if (!pieces || pieces < 1) { toast('Enter how many pieces are in one case', 'err'); return; }
+  if (!img) { toast('Paste a product image URL', 'err'); return; }
+
+  const perUnit = Math.round((caseprice / pieces) * 100) / 100;
+  const newProduct = {
+    id: 'custom-' + Date.now(),
+    name,
+    icon: '📦',
+    img,
+    price: perUnit,
+    unit: 'Piece',
+    casePrice: caseprice,
+    piecesPerCase: pieces,
+  };
+
+  PRODUCTS.push(newProduct);
+  saveCustomProduct(newProduct);
+
+  toast(`${name} added — ₹${perUnit}/piece`, 'ok');
+  document.getElementById('ap-name').value = '';
+  document.getElementById('ap-caseprice').value = '';
+  document.getElementById('ap-pieces').value = '';
+  document.getElementById('ap-img').value = '';
+  document.getElementById('ap-preview').textContent = 'Fill in case price and pieces to see the per-unit price.';
+}
+
+
+  
+
+
+  
 /* ════════════════════════════════════════════════════════
    PAGE: PLACE ORDER
 ════════════════════════════════════════════════════════ */
