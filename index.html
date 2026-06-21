@@ -1079,6 +1079,7 @@ function navigateTo(page) {
     'users-page':     renderUsers,
     'audit-logs':     renderAuditLogs,
     'add-product':    renderAddProduct,
+    'daily-report': renderDailyReport,
   })[page]?.(mc);
 }
 
@@ -2112,6 +2113,67 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('mobile-open');
   document.getElementById('sidebar-backdrop').classList.toggle('show');
 }
+
+
+
+
+
+
+
+
+function renderDailyReport(el) {
+  const today = new Date().toISOString().slice(0, 10);
+  el.innerHTML = `
+    <div class="page-header">
+      <div><div class="section-title">Daily Report</div>
+      <div class="section-sub">Download a full Excel report of everything that happened on a given day — signups, orders, crew activity, and revenue.</div></div>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label>Select Date</label>
+        <input type="date" id="report-date" value="${today}" max="${today}">
+      </div>
+      <button class="btn btn-primary btn-full" id="report-download-btn" onclick="downloadDailyReport()">
+        Download Report (.xlsx)
+      </button>
+    </div>`;
+}
+
+async function downloadDailyReport() {
+  const date = document.getElementById('report-date').value;
+  if (!date) { toast('Select a date', 'err'); return; }
+  const btn = document.getElementById('report-download-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try {
+    const res = await fetch(API + '/reports/daily?date=' + date, {
+      headers: {
+        'Authorization': 'Bearer ' + currentUser.token,
+        'ngrok-skip-browser-warning': 'true',
+      },
+    });
+    if (!res.ok) throw new Error('Failed to generate report (HTTP ' + res.status + ')');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TrainServe-Report-${date}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Report downloaded.', 'ok');
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Download Report (.xlsx)';
+  }
+}
+
+
+
+  
 
 window.__fs  = () => {};
 window.__tab = () => {};
