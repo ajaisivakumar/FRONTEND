@@ -341,7 +341,7 @@ textarea { resize: vertical; min-height: 64px; }
 }
 .product-tile:hover { border-color: var(--border-md); }
 .product-tile.selected { border-color: var(--accent); background: #f8faff; }
-.prod-img { width: 44px; height: 44px; border-radius: 6px; margin-bottom: 8px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 26px; line-height: 1; overflow: hidden; }
+.prod-img { width: 72px; height: 72px; border-radius: 8px; margin-bottom: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 36px; line-height: 1; overflow: hidden; }
 .prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prod-name  { font-size: 12px; font-weight: 600; color: var(--text); }
 .prod-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
@@ -350,6 +350,11 @@ textarea { resize: vertical; min-height: 64px; }
 .qty-btn { width: 26px; height: 26px; border: 1px solid var(--border-md); border-radius: 4px; background: var(--bg); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; color: var(--text-2); transition: background .12s; }
 .qty-btn:hover { background: var(--border); }
 .qty-num { width: 28px; text-align: center; font-size: 13px; font-weight: 600; border: none; background: none; color: var(--text); outline: none; font-family: var(--font); }
+
+
+
+.product-tile.out-of-stock { opacity: .5; cursor: not-allowed; }
+.product-tile.out-of-stock .qty-display { background: var(--red-bg); color: var(--red); }
 
 /* ─── Summary table ─── */
 .summary-table { width: 100%; }
@@ -652,7 +657,7 @@ function closeApiConfigModal() {
 
 
   
-let PRODUCTS = [
+const BASE_PRODUCTS = [
   { id:'wb1', name:'Water Bottle', icon:'💧', img:'assets/products/RAILNEER.jpg', price:20, unit:'1 L' },
   { id:'lays-blue',   name:'Lays Blue',   icon:'🍟', img:'assets/products/LAYS-BLUE.jpg',   price:20, unit:'Pack' },
   { id:'lays-red',    name:'Lays Red',    icon:'🍟', img:'assets/products/LAYS-RED.jpg',    price:20, unit:'Pack' },
@@ -669,22 +674,59 @@ let PRODUCTS = [
   { id:'strawberry', name:'Strawberry Ice Cream', icon:'🍨', img:'assets/products/CAVINS-STRAWBERRY.jpg', price:40, unit:'Cup' },
   { id:'vanila', name:'Vanila Ice Cream', icon:'🍨', img:'assets/products/CAVINS-VANILA.jpg', price:40, unit:'Cup' }
 ];
+
+
+
+
   
 // Load admin-added products from localStorage and merge
   
-(function loadCustomProducts() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
-    PRODUCTS = [...PRODUCTS, ...saved];
-  } catch { /* ignore */ }
-})();
+// Original hardcoded catalog — treated as the base list
+//const BASE_PRODUCTS = PRODUCTS; // PRODUCTS here is your original const array (rename it to BASE_PRODUCTS in its declaration, or keep as-is and reference it once before reassigning below)
+let PRODUCTS = [];
 
-function saveCustomProduct(product) {
-  const saved = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
-  saved.push(product);
-  localStorage.setItem('trainserve_custom_products', JSON.stringify(saved));
+function rebuildProducts() {
+  const customs    = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+  const overrides  = JSON.parse(localStorage.getItem('trainserve_product_overrides') || '{}');
+
+  let merged = [...BASE_PRODUCTS, ...customs].map(p => ({ ...p, inStock: true }));
+
+  merged = merged
+    .map(p => overrides[p.id] ? { ...p, ...overrides[p.id] } : p)
+    .filter(p => !p.deleted);
+
+  PRODUCTS = merged;
 }
 
+function saveCustomProduct(product) {
+  const customs = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+  customs.push(product);
+  localStorage.setItem('trainserve_custom_products', JSON.stringify(customs));
+  rebuildProducts();
+}
+
+function saveOverride(id, changes) {
+  const overrides = JSON.parse(localStorage.getItem('trainserve_product_overrides') || '{}');
+  overrides[id] = { ...(overrides[id]||{}), ...changes };
+  localStorage.setItem('trainserve_product_overrides', JSON.stringify(overrides));
+
+  // If it's a custom product (not base), update it directly in the customs array too
+  const customs = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+  const idx = customs.findIndex(c => c.id === id);
+  if (idx !== -1) {
+    customs[idx] = { ...customs[idx], ...changes };
+    localStorage.setItem('trainserve_custom_products', JSON.stringify(customs));
+  }
+  rebuildProducts();
+}
+
+rebuildProducts();
+
+
+
+
+
+  
 const REMINDER_STEPS = [
   { step:'Step 1 of 3', title:'Are all items packed?',          body:'Verify every item in this order is packed and ready.' },
   { step:'Step 2 of 3', title:'Ready for delivery?',            body:'Confirm packaging is sealed and you are at the collection point.' },
@@ -977,36 +1019,70 @@ function getEta() {
   /* ════════════════════════════════════════════════════════
    PAGE: ADD PRODUCT (admin only, add-only, case pricing)
 ════════════════════════════════════════════════════════ */
+
+  
+/* ════════════════════════════════════════════════════════
+   PAGE: PRODUCT MANAGEMENT (admin) — add, edit, delete, stock
+════════════════════════════════════════════════════════ */
 function renderAddProduct(el) {
   el.innerHTML = `
     <div class="page-header">
-      <div><div class="section-title">Add Product</div>
-      <div class="section-sub">New items are priced per case and split automatically per piece.</div></div>
+      <div><div class="section-title">Products</div>
+      <div class="section-sub">Add new items, edit pricing, or mark items out of stock.</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openProductFormModal()">+ Add Product</button>
     </div>
-    <div class="card">
-      <div class="form-group">
-        <label>Product Name</label>
-        <input type="text" id="ap-name" placeholder="e.g. Lays Magic Masala">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Case Price (₹)</label>
-          <input type="number" id="ap-caseprice" placeholder="e.g. 600" min="0" oninput="updateApPreview()">
-        </div>
-        <div class="form-group">
-          <label>Pieces per Case</label>
-          <input type="number" id="ap-pieces" placeholder="e.g. 30" min="1" oninput="updateApPreview()">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Product Image URL</label>
-        <input type="text" id="ap-img" placeholder="https://i.ibb.co/yourimage.jpg">
-        <p class="muted small mt-4">Upload your photo to <a href="https://imgbb.com" target="_blank" style="color:var(--text)">imgbb.com</a> or <a href="https://postimages.org" target="_blank" style="color:var(--text)">postimages.org</a> (free), then paste the direct image link here.</p>
-      </div>
-      <div class="divider"></div>
-      <div id="ap-preview" class="muted small">Fill in case price and pieces to see the per-unit price.</div>
-      <button class="btn btn-primary btn-full mt-16" onclick="submitNewProduct()">Add Product</button>
+    <div class="card table-scroll" style="padding:0;overflow:hidden">
+      <table class="dt">
+        <thead><tr><th>Image</th><th>Name</th><th>Unit</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${!PRODUCTS.length
+            ? '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted)">No products yet.</td></tr>'
+            : PRODUCTS.map(p => `<tr>
+                <td><div style="width:40px;height:40px;border-radius:6px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px">${(p.img||p.imageUrl) ? `<img src="${p.img||p.imageUrl}" style="width:100%;height:100%;object-fit:cover">` : (p.icon||'📦')}</div></td>
+                <td style="font-weight:500">${p.name}</td>
+                <td>${p.unit}</td>
+                <td>₹${p.price}${p.casePrice ? `<br><span class="small muted">₹${p.casePrice}/pack of ${p.piecesPerCase}</span>` : ''}</td>
+                <td><span class="badge ${p.inStock!==false?'badge-completed':'badge-cancelled'}">${p.inStock!==false?'In Stock':'Out of Stock'}</span></td>
+                <td style="white-space:nowrap">
+                  <button class="btn btn-outline btn-xs" onclick='openProductFormModal(${JSON.stringify(p).replace(/'/g,"&apos;")})'>Edit</button>
+                  <button class="btn btn-outline btn-xs" onclick="toggleStock('${p.id}', ${p.inStock===false})">${p.inStock===false?'Mark In Stock':'Mark Out of Stock'}</button>
+                  <button class="btn btn-outline btn-xs" onclick="deleteProduct('${p.id}')">Delete</button>
+                </td>
+              </tr>`).join('')}
+        </tbody>
+      </table>
     </div>`;
+}
+
+function openProductFormModal(product = null) {
+  const isEdit = !!product;
+  openModal(`
+    <div class="modal-title">${isEdit ? 'Edit Product' : 'Add Product'}</div>
+    <div class="form-group">
+      <label>Product Name</label>
+      <input type="text" id="ap-name" value="${isEdit ? product.name : ''}" placeholder="e.g. Lays Magic Masala">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Case Price (₹)</label>
+        <input type="number" id="ap-caseprice" value="${isEdit ? (product.casePrice||'') : ''}" placeholder="e.g. 240" min="0" oninput="updateApPreview()">
+      </div>
+      <div class="form-group">
+        <label>Pieces per Case</label>
+        <input type="number" id="ap-pieces" value="${isEdit ? (product.piecesPerCase||'') : ''}" placeholder="e.g. 12" min="1" oninput="updateApPreview()">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Product Image URL</label>
+      <input type="text" id="ap-img" value="${isEdit ? (product.img||product.imageUrl||'') : ''}" placeholder="https://i.ibb.co/yourimage.jpg">
+      <p class="muted small mt-4">Upload to <a href="https://imgbb.com" target="_blank" style="color:var(--text)">imgbb.com</a> or <a href="https://postimages.org" target="_blank" style="color:var(--text)">postimages.org</a>, then paste the direct image link.</p>
+    </div>
+    <div class="divider"></div>
+    <div id="ap-preview" class="muted small">${isEdit && product.casePrice ? `Per-unit price: <strong style="color:var(--text)">₹${product.price}</strong>` : 'Fill in case price and pieces to see the per-unit price.'}</div>
+    <button class="btn btn-primary btn-full mt-16" onclick="submitProductForm(${isEdit ? `'${product.id}'` : 'null'})">
+      ${isEdit ? 'Save Changes' : 'Add Product'}
+    </button>
+  `);
 }
 
 function updateApPreview() {
@@ -1021,7 +1097,7 @@ function updateApPreview() {
   preview.innerHTML = `Per-unit price: <strong style="color:var(--text)">₹${perUnit}</strong> &nbsp;(₹${caseprice} ÷ ${pieces} pcs)`;
 }
 
-function submitNewProduct() {
+function submitProductForm(existingId) {
   const name      = document.getElementById('ap-name').value.trim();
   const caseprice = parseFloat(document.getElementById('ap-caseprice').value);
   const pieces    = parseInt(document.getElementById('ap-pieces').value);
@@ -1033,28 +1109,37 @@ function submitNewProduct() {
   if (!img) { toast('Paste a product image URL', 'err'); return; }
 
   const perUnit = Math.round((caseprice / pieces) * 100) / 100;
-  const newProduct = {
-    id: 'custom-' + Date.now(),
-    name,
-    icon: '📦',
-    img,
-    price: perUnit,
-    unit: 'Piece',
-    casePrice: caseprice,
-    piecesPerCase: pieces,
-  };
 
-  PRODUCTS.push(newProduct);
-  saveCustomProduct(newProduct);
+  if (existingId) {
+    saveOverride(existingId, { name, price: perUnit, casePrice: caseprice, piecesPerCase: pieces, img, imageUrl: img });
+    toast('Product updated.', 'ok');
+  } else {
+    const newProduct = {
+      id: 'custom-' + Date.now(),
+      name, icon: '📦', img, imageUrl: img,
+      price: perUnit, unit: 'Piece',
+      casePrice: caseprice, piecesPerCase: pieces,
+    };
+    saveCustomProduct(newProduct);
+    toast(`${name} added — ₹${perUnit}/piece`, 'ok');
+  }
 
-  toast(`${name} added — ₹${perUnit}/piece`, 'ok');
-  document.getElementById('ap-name').value = '';
-  document.getElementById('ap-caseprice').value = '';
-  document.getElementById('ap-pieces').value = '';
-  document.getElementById('ap-img').value = '';
-  document.getElementById('ap-preview').textContent = 'Fill in case price and pieces to see the per-unit price.';
+  closeModal();
+  navigateTo('add-product');
 }
 
+function toggleStock(id, makeInStock) {
+  saveOverride(id, { inStock: makeInStock });
+  toast(makeInStock ? 'Marked in stock.' : 'Marked out of stock.', 'ok');
+  navigateTo('add-product');
+}
+
+function deleteProduct(id) {
+  if (!confirm('Remove this product permanently?')) return;
+  saveOverride(id, { deleted: true });
+  toast('Product removed.', 'ok');
+  navigateTo('add-product');
+}
 
   
 
@@ -1087,10 +1172,14 @@ function renderPlaceOrder(el) {
       <div class="form-group"><label>Expected Arrival Time at Delivery Station</label>${etaHTML()}</div>
     </div>
     <div class="card mb-16">
-      <div class="card-header"><div class="card-title">Select Items</div>
-        <div class="card-subtitle">Tap an item to add it to your order</div></div>
-      <div class="product-grid" id="product-grid"></div>
-    </div>
+  <div class="card-header"><div class="card-title">Select Items</div>
+    <div class="card-subtitle">Tap an item to add it to your order</div></div>
+  <div class="form-group">
+    <input type="text" id="product-search" placeholder="Search products… (e.g. 'lays', 'water', 'ice cream')"
+      oninput="buildProductGrid(this.value)">
+  </div>
+  <div class="product-grid" id="product-grid"></div>
+</div>
     <div class="card" id="summary-card">
       <div class="card-header"><div class="card-title">Order Summary</div></div>
       <div id="summary-body"><p class="muted small">No items selected yet.</p></div>
@@ -1103,23 +1192,51 @@ function renderPlaceOrder(el) {
   buildProductGrid();
 }
 
-function buildProductGrid() {
+
+
+
+  
+
+function buildProductGrid(filterText = '') {
   const grid = document.getElementById('product-grid');
-  PRODUCTS.forEach(p => {
+  grid.innerHTML = '';
+  const visible = filterText ? fuzzyFilterProducts(PRODUCTS, filterText) : PRODUCTS;
+
+  if (!visible.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p>No products match "${filterText}"</p></div>`;
+    return;
+  }
+
+  visible.forEach(p => {
     const qty = orderCart[p.id] || 0;
+    const outOfStock = p.inStock === false;
     const d = document.createElement('div');
-    d.className = 'product-tile' + (qty ? ' selected' : '');
+    d.className = 'product-tile' + (qty ? ' selected' : '') + (outOfStock ? ' out-of-stock' : '');
     d.id = 'pt-' + p.id;
-    d.onclick = () => openQtyModal(p.id);
+    d.onclick = () => { if (!outOfStock) openQtyModal(p.id); else toast(`${p.name} is out of stock`, 'warn'); };
     d.innerHTML = `
       <div class="prod-img">${(p.img||p.imageUrl) ? `<img src="${p.img||p.imageUrl}" alt="${p.name}" loading="lazy" onerror="this.parentElement.textContent='${p.icon||'📦'}'">` : (p.icon||'📦')}</div>
       <div class="prod-name">${p.name}</div>
       <div class="prod-sub">${p.unit}</div>
       <div class="prod-price">₹${p.price}</div>
-      <div class="qty-display" id="qd-${p.id}">${qty ? `${qty} added` : 'Tap to add'}</div>`;
+      <div class="qty-display" id="qd-${p.id}">${outOfStock ? 'Out of stock' : (qty ? `${qty} added` : 'Tap to add')}</div>`;
     grid.appendChild(d);
   });
 }
+
+// Simple fuzzy match: every typed word just needs to appear somewhere in the name
+// (no need to type the full or exact name, partial/out-of-order words still match)
+function fuzzyFilterProducts(list, query) {
+  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  return list.filter(p => {
+    const haystack = p.name.toLowerCase();
+    return words.every(w => haystack.includes(w));
+  });
+}
+
+
+
+  
 
 function chQty(pid, d) {
   const nv = Math.max(0, (orderCart[pid]||0) + d);
@@ -1749,9 +1866,16 @@ function openQtyModal(pid) {
   const p = PRODUCTS.find(x => x.id === pid);
   const current = orderCart[pid] || 0;
   const presets = [10, 25, 50, 100, 250, 500];
+
+  const hasCase = p.piecesPerCase && p.casePrice;
+  const priceInfo = hasCase
+    ? `<div class="muted small">One piece price - ₹${p.price}</div>
+       <div class="muted small">${p.piecesPerCase} in one pack total - ₹${p.casePrice}</div>`
+    : `<p class="muted small">${p.unit} · ₹${p.price} each</p>`;
+
   openModal(`
     <div class="modal-title">${p.name}</div>
-    <p class="muted small">${p.unit} · ₹${p.price} each</p>
+    ${priceInfo}
     <div class="qty-modal-display" id="qty-modal-num">${current}</div>
     <div class="qty-chip-grid">
       ${presets.map(n => `<div class="qty-chip" onclick="setQtyModal(${n})">${n}</div>`).join('')}
@@ -1769,6 +1893,10 @@ function openQtyModal(pid) {
   `);
 }
 
+
+
+
+  
 function setQtyModal(n) {
   document.getElementById('qty-modal-num').textContent = n;
   document.getElementById('qty-modal-input').value = n;
