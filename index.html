@@ -400,8 +400,8 @@ table.dt tbody tr:hover td { background: var(--bg); }
 .notif-ts   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
 .notif-item.unread { background: #eff6ff; padding-left: 10px; padding-right: 10px; border-radius: 6px; border: 1px solid #dbeafe; margin-bottom: 6px; }
 
-/* ─── Upload area ─── */
-.upload-zone { border: 2px dashed var(--border-md); border-radius: var(--radius-sm); padding: 28px 16px; text-align: center; cursor: pointer; position: relative; transition: border-color .15s; background: var(--surface-2); }
+/* ───  area ─── */
+.-zone { border: 2px dashed var(--border-md); border-radius: var(--radius-sm); padding: 28px 16px; text-align: center; cursor: pointer; position: relative; transition: border-color .15s; background: var(--surface-2); }
 .upload-zone:hover { border-color: var(--accent); }
 .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 1; }
 .upload-zone-icon { font-size: 28px; margin-bottom: 8px; color: var(--text-muted); }
@@ -1075,7 +1075,7 @@ function openProductFormModal(product = null) {
     <div class="form-group">
       <label>Product Image URL</label>
       <input type="text" id="ap-img" value="${isEdit ? (product.img||product.imageUrl||'') : ''}" placeholder="https://i.ibb.co/yourimage.jpg">
-      <p class="muted small mt-4">Upload to <a href="https://imgbb.com" target="_blank" style="color:var(--text)">imgbb.com</a> or <a href="https://postimages.org" target="_blank" style="color:var(--text)">postimages.org</a>, then paste the direct image link.</p>
+      <p class="muted small mt-4">Upload to <a href="https://imgbb.com" target="_blank" style="color:var(--text)">imgbb.com</a> or <a href="https://podu.pics" target="_blank" style="color:var(--text)">podu.pics</a>, then paste the direct image link.</p>
     </div>
     <div class="divider"></div>
     <div id="ap-preview" class="muted small">${isEdit && product.casePrice ? `Per-unit price: <strong style="color:var(--text)">₹${product.price}</strong>` : 'Fill in case price and pieces to see the per-unit price.'}</div>
