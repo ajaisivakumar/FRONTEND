@@ -1022,6 +1022,9 @@ const ICONS = {
 };
 
 const NAV = {
+  guest: [
+  { id:'place-order', label:'Browse & Order', icon:'plus' },
+  ],
   user:  [
     { id:'place-order',   label:'New Order',      icon:'plus'  },
     { id:'my-orders',     label:'My Orders',      icon:'order' },
@@ -1045,7 +1048,7 @@ const NAV = {
   ],
 };
 const MOBILE_NAV = {
-  guest: [],
+   guest: NAV.guest,
   user:  NAV.user,
   crew:  NAV.crew,
   admin: [
@@ -1089,9 +1092,8 @@ function launchGuestApp() {
     <span class="topbar-user" id="topbar-user">Browsing as guest</span>
     <button class="btn btn-outline btn-sm" onclick="showAuthPage('user')">Sign In</button>`;
   currentRole = 'guest';
-  buildGuestNav();
-  // Force the menu page to load immediately — guests should see items
-  // right away, not just after tapping the bottom nav button.
+ buildGuestNav();
+  document.getElementById('main-content').style.paddingBottom = '20px';
   setTimeout(() => navigateTo('place-order'), 0);
 }
 
@@ -1105,9 +1107,8 @@ function buildGuestNav() {
     </div>`;
   });
   sb.innerHTML += `<div class="sidebar-footer"><button class="btn btn-primary btn-full btn-sm" onclick="showAuthPage('user')">Sign In</button></div>`;
-  mn.innerHTML = `<div class="mob-nav-item active" id="mi-place-order" onclick="navigateTo('place-order')">
-      <span class="icon">${ICONS.plus}</span>Browse & Order
-    </div>`;
+  // No bottom nav for guests — they're already on the only page they can see.
+  mn.innerHTML = '';
 }
 
 // Shows the existing login/signup card, defaulting to the requested role.
@@ -1131,7 +1132,8 @@ function launchApp() {
   const r = currentUser.role;
   const rt = document.getElementById('topbar-role-tag');
   if (rt) rt.textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
-  buildNav();
+ buildNav();
+  document.getElementById('main-content').style.paddingBottom = '';
   navigateTo(NAV[currentUser.role.toLowerCase()]?.[0]?.id || 'place-order');
 }
 
