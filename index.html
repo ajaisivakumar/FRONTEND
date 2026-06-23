@@ -1091,7 +1091,7 @@ function launchGuestApp() {
   document.getElementById('topbar-user').textContent = 'Browsing as guest';
   const right = document.querySelector('.topbar-right');
   right.innerHTML = `
-    <span class="topbar-user">Browsing as guest</span>
+    <span class="topbar-user" id="topbar-user">Browsing as guest</span>
     <button class="btn btn-outline btn-sm" onclick="showAuthPage('user')">Sign In</button>`;
   currentRole = 'guest';
   buildGuestNav();
@@ -1129,9 +1129,11 @@ function showAuthPage(role) {
 function launchApp() {
   document.getElementById('auth-page').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('topbar-user').textContent = currentUser.name;
+  const tu = document.getElementById('topbar-user');
+  if (tu) tu.textContent = currentUser.name;
   const r = currentUser.role;
-  document.getElementById('topbar-role-tag').textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+  const rt = document.getElementById('topbar-role-tag');
+  if (rt) rt.textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
   buildNav();
   navigateTo(NAV[currentUser.role.toLowerCase()]?.[0]?.id || 'place-order');
 }
