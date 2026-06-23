@@ -1646,9 +1646,10 @@ async function markRead() {
 /* ─── Admin pages ─── */
 async function renderDashboard(el) {
   try {
+    const todayStr = new Date().toISOString().slice(0,10);
     const [stats, orders, crew] = await Promise.all([
-      apiFetch('/orders/stats'),
-      apiFetch('/orders/all'),
+      apiFetch('/orders/stats?date=' + todayStr),
+      apiFetch('/orders/all?date=' + todayStr),
       apiFetch('/users/crew'),
     ]);
     el.innerHTML = `
@@ -1768,7 +1769,8 @@ async function renderCrewMgmt(el) {
 
 async function renderAnalytics(el) {
   try {
-    const orders = await apiFetch('/orders/all');
+    const todayStr = new Date().toISOString().slice(0,10);
+    const orders = await apiFetch('/orders/all?date=' + todayStr);
     const crew   = await apiFetch('/users/crew');
     const done   = orders.filter(o => o.status === 'COMPLETED');
     const rev    = done.reduce((s,o) => s + o.total, 0);
