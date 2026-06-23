@@ -1087,15 +1087,15 @@ function launchGuestApp() {
   document.getElementById('auth-page').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('topbar-role-tag').textContent = '';
-  // Replace the user pill + sign-out button with a Sign In button for guests
-  document.getElementById('topbar-user').textContent = 'Browsing as guest';
   const right = document.querySelector('.topbar-right');
   right.innerHTML = `
     <span class="topbar-user" id="topbar-user">Browsing as guest</span>
     <button class="btn btn-outline btn-sm" onclick="showAuthPage('user')">Sign In</button>`;
   currentRole = 'guest';
   buildGuestNav();
-  navigateTo('place-order');
+  // Force the menu page to load immediately — guests should see items
+  // right away, not just after tapping the bottom nav button.
+  setTimeout(() => navigateTo('place-order'), 0);
 }
 
 function buildGuestNav() {
