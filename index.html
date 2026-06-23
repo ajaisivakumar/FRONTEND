@@ -530,7 +530,8 @@ table.dt tbody tr:hover td { background: var(--bg); }
 <body>
 
 <!-- AUTH PAGE -->
-<div id="auth-page">
+<!-- AUTH PAGE -->
+<div id="auth-page" class="hidden">
   <div class="auth-box">
     <div class="auth-logo">TrainServe</div>
     <div class="auth-tagline">Railway pantry order management platform</div>
@@ -540,6 +541,9 @@ table.dt tbody tr:hover td { background: var(--bg); }
       <button class="role-btn" onclick="setRole('crew')">Crew</button>
       <button class="role-btn" onclick="setRole('admin')">Admin</button>
     </div>
+    <p class="auth-help" style="margin-top:-8px;margin-bottom:16px">
+      <a href="#" onclick="document.getElementById('app').classList.remove('hidden');document.getElementById('auth-page').classList.add('hidden');window.location.hash='';return false;" style="color:#fff;text-decoration:underline;">← Back to browsing</a>
+    </p>
 
     <!-- User card -->
     <div id="auth-user" class="auth-card">
@@ -612,7 +616,7 @@ table.dt tbody tr:hover td { background: var(--bg); }
 </div>
 
 <!-- MAIN APP -->
-<div id="app" class="hidden">
+<div id="app">
   <div class="topbar">
   <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
     <svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -933,6 +937,7 @@ async function signupAs() {
     sessionStorage.setItem('currentUser', JSON.stringify(data));
     await loadCrew();
     launchApp();
+    resumeGuestIntent();
     toast('Account created successfully!', 'ok');
   } catch (e) { toast(e.message, 'err'); }
 }
@@ -967,8 +972,25 @@ async function loginAs(role) {
     }
     await loadCrew();
     launchApp();
+    resumeGuestIntent();
   } catch (e) { toast(e.message || 'Login failed', 'err'); }
 }
+
+// If the guest had items in their cart or wanted a specific page, restore it after login.
+function resumeGuestIntent() {
+  try {
+    const pending = JSON.parse(sessionStorage.getItem('pendingOrderCart') || 'null');
+    if (pending) {
+      orderCart = pending;
+      sessionStorage.removeItem('pendingOrderCart');
+      navigateTo('place-order');
+      setTimeout(() => { buildProductGrid(); refreshSummary(); }, 0);
+      toast('Welcome back — your cart was restored.', 'ok');
+    }
+  } catch {}
+}
+
+  
 
 /* ════════════════════════════════════════════════════════
    LOGOUT
@@ -979,9 +1001,8 @@ async function logout() {
   try { await apiFetch('/users/logout', { method: 'POST' }); } catch {}
   currentUser = null; currentPage = null; crewList = [];
   sessionStorage.removeItem('currentUser');
-  document.getElementById('auth-page').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-  loadCrewDropdown(); // refresh dropdown on logout too
+  window.location.hash = '';
+  launchGuestApp();
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1001,6 +1022,9 @@ const ICONS = {
 };
 
 const NAV = {
+  guest: [
+    { id:'place-order', label:'Browse & Order', icon:'plus' },
+  ],
   user:  [
     { id:'place-order',   label:'New Order',      icon:'plus'  },
     { id:'my-orders',     label:'My Orders',      icon:'order' },
@@ -1024,6 +1048,7 @@ const NAV = {
   ],
 };
 const MOBILE_NAV = {
+  guest: NAV.guest,
   user:  NAV.user,
   crew:  NAV.crew,
   admin: [
@@ -1034,13 +1059,72 @@ const MOBILE_NAV = {
   ],
 };
 
+
+  
+
 // Restore session if page was refreshed
-(async function restoreSession() {
+// Boot logic: logged-in users resume their session,
+// everyone else lands on the public guest homepage.
+// /#admin (or /admin/ on GitHub Pages, see note below) opens the admin login directly.
+(async function boot() {
   if (currentUser?.token) {
     await loadCrew();
     launchApp();
+    return;
   }
+  if (window.location.hash === '#admin') {
+    showAuthPage('admin');
+    return;
+  }
+  launchGuestApp();
 })();
+
+window.addEventListener('hashchange', () => {
+  if (!currentUser && window.location.hash === '#admin') showAuthPage('admin');
+});
+
+function launchGuestApp() {
+  document.getElementById('auth-page').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('topbar-role-tag').textContent = '';
+  // Replace the user pill + sign-out button with a Sign In button for guests
+  document.getElementById('topbar-user').textContent = 'Browsing as guest';
+  const right = document.querySelector('.topbar-right');
+  right.innerHTML = `
+    <span class="topbar-user">Browsing as guest</span>
+    <button class="btn btn-outline btn-sm" onclick="showAuthPage('user')">Sign In</button>`;
+  currentRole = 'guest';
+  buildGuestNav();
+  navigateTo('place-order');
+}
+
+function buildGuestNav() {
+  const sb = document.getElementById('sidebar');
+  const mn = document.getElementById('mob-nav');
+  sb.innerHTML = ''; mn.innerHTML = '';
+  NAV.guest.forEach(it => {
+    sb.innerHTML += `<div class="sidebar-item active" id="si-${it.id}" onclick="navigateTo('${it.id}')">
+      <span class="icon">${ICONS[it.icon]}</span> ${it.label}
+    </div>`;
+  });
+  sb.innerHTML += `<div class="sidebar-footer"><button class="btn btn-primary btn-full btn-sm" onclick="showAuthPage('user')">Sign In</button></div>`;
+  mn.innerHTML = `<div class="mob-nav-item active" id="mi-place-order" onclick="navigateTo('place-order')">
+      <span class="icon">${ICONS.plus}</span>Browse & Order
+    </div>`;
+}
+
+// Shows the existing login/signup card, defaulting to the requested role.
+function showAuthPage(role) {
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('auth-page').classList.remove('hidden');
+  setRole(role || 'user');
+  if (role === 'admin') window.location.hash = 'admin';
+}
+
+
+
+
+  
 
 function launchApp() {
   document.getElementById('auth-page').classList.add('hidden');
@@ -1071,7 +1155,12 @@ function buildNav() {
   });
 }
 
+const PUBLIC_PAGES = ['place-order'];
 function navigateTo(page) {
+  if (!currentUser?.token && !PUBLIC_PAGES.includes(page)) {
+    showAuthPage('user');
+    return;
+  }
   currentPage = page;
   document.getElementById('sidebar')?.classList.remove('mobile-open');
   document.getElementById('sidebar-backdrop')?.classList.remove('show');
@@ -1447,6 +1536,12 @@ function refreshSummary() {
 }
 
 async function submitOrder() {
+  if (!currentUser?.token) {
+    sessionStorage.setItem('pendingOrderCart', JSON.stringify(orderCart));
+    toast('Please sign in to place your order', 'warn');
+    showAuthPage('user');
+    return;
+  }
   const eta = orderType === 'train' ? getEta() : '';
   let payload;
 
