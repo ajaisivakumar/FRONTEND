@@ -1415,7 +1415,7 @@ function renderPlaceOrder(el) {
       <div class="card-header"><div class="card-title">Train & Passenger Details</div></div>
       <div class="form-row">
         <div class="form-group"><label>Passenger Name</label>
-          <input type="text" id="po-name" placeholder="Full name" value="${currentUser.name}"></div>
+          <input type="text" id="po-name" placeholder="Full name" value="${currentUser?.name || ''}"></div>
         <div class="form-group"><label>Train Number</label>
           <input type="text" id="po-trainno" placeholder="e.g. 12631" inputmode="numeric"></div>
       </div>
@@ -1431,7 +1431,7 @@ function renderPlaceOrder(el) {
     <div class="card mb-16 hidden" id="stall-details-card">
       <div class="card-header"><div class="card-title">Stall Details</div></div>
       <div class="form-group"><label>Name of the Ordering Person</label>
-        <input type="text" id="po-stallperson" placeholder="Full name" value="${currentUser.name}"></div>
+        <input type="text" id="po-stallperson" placeholder="Full name" value="${currentUser?.name || ''}"></div>
       <div class="form-group"><label>Name of the Stall</label>
         <input type="text" id="po-stallname" placeholder="e.g. Sharma Tea Stall"></div>
       <div class="form-group"><label>Stall Location <span class="muted">(optional)</span></label>
