@@ -1744,8 +1744,13 @@ async function renderAllOrders(el) {
 
 async function renderCrewMgmt(el) {
   try {
+    async function renderCrewMgmt(el) {
+  try {
     const [crew, orders] = await Promise.all([apiFetch('/users/crew'), apiFetch('/orders/all')]);
-    el.innerHTML = `<div class="page-header"><div><div class="section-title">Crew Management</div></div></div>`;
+    el.innerHTML = `<div class="page-header">
+      <div><div class="section-title">Crew Management</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openCrewFormModal()">+ Add Crew</button>
+    </div>`;
     crew.forEach(c => {
       const co   = orders.filter(o => o.assignedCrewId === c.crewId);
       const done = co.filter(o => o.status === 'COMPLETED').length;
@@ -1769,11 +1774,88 @@ async function renderCrewMgmt(el) {
           <div><div style="font-size:18px;font-weight:700">${act}</div><div class="small muted">Active</div></div>
           <div><div style="font-size:18px;font-weight:700">${co.length}</div><div class="small muted">Total</div></div>
           <div><div style="font-size:18px;font-weight:700">₹${rev}</div><div class="small muted">Revenue</div></div>
+        </div>
+        <div class="flex gap-8 mt-12">
+          <button class="btn btn-outline btn-xs" onclick='openCrewFormModal(${JSON.stringify(c).replace(/'/g,"&apos;")})'>Edit</button>
+          <button class="btn btn-outline btn-xs" onclick="deleteCrew('${c.crewId}')">Delete</button>
         </div>`;
       el.appendChild(d);
     });
   } catch (e) { el.innerHTML = errState(e.message); }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function openCrewFormModal(crew = null) {
+  const isEdit = !!crew;
+  openModal(`
+    <div class="modal-title">${isEdit ? 'Edit Crew Member' : 'Add Crew Member'}</div>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="cf-name" value="${isEdit ? crew.name : ''}" placeholder="e.g. Govindan Raj">
+    </div>
+    <div class="form-group">
+      <label>PIN (4 digits)</label>
+      <input type="password" id="cf-pin" maxlength="4" inputmode="numeric" placeholder="${isEdit ? 'Leave blank to keep current PIN' : 'e.g. 4821'}">
+    </div>
+    <button class="btn btn-primary btn-full mt-16" onclick="submitCrewForm(${isEdit ? `'${crew.crewId}'` : 'null'})">
+      ${isEdit ? 'Save Changes' : 'Add Crew Member'}
+    </button>
+  `);
+}
+
+async function submitCrewForm(existingCrewId) {
+  const name = document.getElementById('cf-name').value.trim();
+  const pin  = document.getElementById('cf-pin').value.trim();
+
+  if (!name) { toast('Enter the crew member\'s name', 'err'); return; }
+  if (!existingCrewId && pin.length !== 4) { toast('Enter a 4-digit PIN', 'err'); return; }
+  if (pin && pin.length !== 4) { toast('PIN must be exactly 4 digits', 'err'); return; }
+
+  try {
+    if (existingCrewId) {
+      const body = { name };
+      if (pin) body.pin = pin;
+      await apiFetch('/users/crew/' + existingCrewId, { method: 'PATCH', body: JSON.stringify(body) });
+      toast('Crew member updated.', 'ok');
+    } else {
+      await apiFetch('/users/crew', { method: 'POST', body: JSON.stringify({ name, pin }) });
+      toast('Crew member added.', 'ok');
+    }
+    closeModal();
+    await loadCrew();
+    navigateTo('crew-mgmt');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deleteCrew(crewId) {
+  if (!confirm('Remove this crew member permanently? This cannot be undone.')) return;
+  try {
+    await apiFetch('/users/crew/' + crewId, { method: 'DELETE' });
+    toast('Crew member removed.', 'ok');
+    await loadCrew();
+    navigateTo('crew-mgmt');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+
+
+
+
+
+
+
+
+    
 
 async function renderAnalytics(el) {
   try {
