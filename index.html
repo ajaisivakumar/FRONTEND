@@ -1742,9 +1742,11 @@ async function renderAllOrders(el) {
   } catch (e) { el.innerHTML = errState(e.message); }
 }
 
+
+
+
+  
 async function renderCrewMgmt(el) {
-  try {
-    async function renderCrewMgmt(el) {
   try {
     const [crew, orders] = await Promise.all([apiFetch('/users/crew'), apiFetch('/orders/all')]);
     el.innerHTML = `<div class="page-header">
