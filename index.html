@@ -1127,15 +1127,24 @@ function showAuthPage(role) {
 function launchApp() {
   document.getElementById('auth-page').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  const tu = document.getElementById('topbar-user');
-  if (tu) tu.textContent = currentUser.name;
+
+  // Rebuild the topbar-right fully — guest mode may have replaced
+  // the Sign Out button with a Sign In button, so restore it here.
+  const right = document.querySelector('.topbar-right');
+  right.innerHTML = `
+    <span class="topbar-user" id="topbar-user"></span>
+    <button class="btn btn-outline btn-sm" onclick="logout()">Sign out</button>`;
+
+  document.getElementById('topbar-user').textContent = currentUser.name;
   const r = currentUser.role;
-  const rt = document.getElementById('topbar-role-tag');
-  if (rt) rt.textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
- buildNav();
+  document.getElementById('topbar-role-tag').textContent = r.charAt(0).toUpperCase() + r.slice(1).toLowerCase();
+  buildNav();
   document.getElementById('main-content').style.paddingBottom = '';
   navigateTo(NAV[currentUser.role.toLowerCase()]?.[0]?.id || 'place-order');
 }
+
+
+  
 
 function buildNav() {
   const role  = currentUser.role.toLowerCase();
