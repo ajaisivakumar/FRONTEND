@@ -16,7 +16,7 @@
   
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TrainServe — Order Management</title>
+<title>KB ENTERPRISES — Order Management</title>
   
 <link rel="preload" as="image" href="assets/products/LOGGIN-BACKGROUND.jpg"> 
 
@@ -28,34 +28,37 @@
 html { -webkit-text-size-adjust: 100%; }
 
 
-/* ─── Tokens ─── */
+/* ─── Tokens — KB ENTERPRISES ─── */
 :root {
-  --bg:          #f4f5f7;
-  --surface:     #ffffff;
-  --surface-2:   #f9fafb;
-  --border:      #e5e7eb;
-  --border-md:   #d1d5db;
-  --text:        #111827;
-  --text-2:      #374151;
-  --text-muted:  #6b7280;
-  --accent:      #111827;
-  --accent-fg:   #ffffff;
-  --accent-h:    #1f2937;
-  --green:       #15803d;
-  --green-bg:    #dcfce7;
-  --amber:       #b45309;
-  --amber-bg:    #fef3c7;
-  --blue:        #1d4ed8;
-  --blue-bg:     #dbeafe;
-  --red:         #b91c1c;
-  --red-bg:      #fee2e2;
-  --radius:      8px;
-  --radius-sm:   5px;
-  --shadow-sm:   0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow:      0 4px 12px rgba(0,0,0,.08);
+  --bg:          #F5F0E8;
+  --surface:     #FFFFFF;
+  --surface-2:   #FAF8F5;
+  --border:      #E2D9CC;
+  --border-md:   #C9BFAF;
+  --text:        #1A2332;
+  --text-2:      #3D4A5C;
+  --text-muted:  #6B7280;
+  --accent:      #0B1F3A;
+  --accent-fg:   #FFFFFF;
+  --accent-h:    #152A45;
+  --gold:        #C9A227;
+  --gold-bg:     #FDF6E3;
+  --gold-dark:   #A6851F;
+  --green:       #1B6B4A;
+  --green-bg:    #DCFCE7;
+  --amber:       #B45309;
+  --amber-bg:    #FEF3C7;
+  --blue:        #1E4A8A;
+  --blue-bg:     #DBEAFE;
+  --red:         #8B1E2D;
+  --red-bg:      #FEE2E2;
+  --radius:      10px;
+  --radius-sm:   6px;
+  --shadow-sm:   0 1px 3px rgba(11,31,58,.08), 0 1px 2px rgba(11,31,58,.06);
+  --shadow:      0 8px 24px rgba(11,31,58,.14);
   --font:        'Inter', system-ui, -apple-system, sans-serif;
-  --topbar-h:    56px;
-  --sidebar-w:   220px;
+  --topbar-h:    60px;
+  --sidebar-w:   240px;
 }
 
 body {
@@ -116,8 +119,9 @@ body {
 }
 .btn:hover  { opacity: .88; }
 .btn:active { opacity: .75; }
-.btn-primary { background: var(--accent);    color: var(--accent-fg); border-color: var(--accent); }
-.btn-outline { background: var(--surface);   color: var(--text-2);    border-color: var(--border-md); }
+.btn-primary { background: var(--gold); color: var(--accent); border-color: var(--gold); font-weight: 600; }
+.btn-primary:hover { background: var(--gold-dark); border-color: var(--gold-dark); opacity: 1; }
+.btn-outline { background: var(--surface); color: var(--text-2); border-color: var(--border-md); }
 .btn-outline:hover { background: var(--bg); }
 .btn-green  { background: var(--green);      color: #fff; border-color: var(--green); }
 .btn-red    { background: var(--red);        color: #fff; border-color: var(--red);   }
@@ -140,7 +144,7 @@ input, select, textarea {
   -webkit-appearance: none; appearance: none;
 }
 input:focus, select:focus, textarea:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(17,24,39,.08);
+  border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,39,.15);
 }
 input::placeholder { color: #9ca3af; }
 textarea { resize: vertical; min-height: 64px; }
@@ -171,20 +175,24 @@ textarea { resize: vertical; min-height: 64px; }
 
 /* ─── Topbar ─── */
 .topbar {
-  background: var(--surface); border-bottom: 1px solid var(--border);
+  background: var(--accent);
+  border-bottom: 3px solid var(--gold);
   padding: 0 24px; height: var(--topbar-h);
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 100;
 }
-.topbar-brand { font-weight: 700; font-size: 15px; letter-spacing: -.3px; color: var(--text); }
-.topbar-brand span { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+.topbar-brand { font-weight: 700; font-size: 16px; letter-spacing: .5px; color: #fff; }
+.topbar-brand em { color: var(--gold); font-style: normal; font-weight: 700; }
+.topbar-brand span { color: rgba(255,255,255,.65); font-weight: 500; font-size: 12px; margin-left: 8px; letter-spacing: 0; }
 .topbar-right { display: flex; align-items: center; gap: 10px; }
 .topbar-user {
-  font-size: 12px; color: var(--text-muted);
-  background: var(--bg); border: 1px solid var(--border);
+  font-size: 12px; color: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
   padding: 5px 12px; border-radius: 20px;
   max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.topbar .btn-outline { background: transparent; color: #fff; border-color: rgba(255,255,255,.35); }
+.topbar .btn-outline:hover { background: rgba(255,255,255,.1); opacity: 1; }
 @media (max-width: 520px) { .topbar { padding: 0 14px; } .topbar-user { max-width: 110px; } }
 
 /* ─── App layout ─── */
@@ -192,27 +200,27 @@ textarea { resize: vertical; min-height: 64px; }
 
 /* ─── Sidebar ─── */
 .sidebar {
-  width: var(--sidebar-w); background: var(--surface);
-  border-right: 1px solid var(--border);
-  padding: 12px 0; flex-shrink: 0;
+  width: var(--sidebar-w); background: var(--accent);
+  border-right: none;
+  padding: 16px 0; flex-shrink: 0;
   display: flex; flex-direction: column;
 }
 @media (max-width: 680px) { .sidebar { display: none; } }
 
-.sidebar-section { padding: 4px 14px 2px; font-size: 10px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-top: 8px; }
+.sidebar-section { padding: 4px 18px 2px; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.35); margin-top: 8px; }
 
 .sidebar-item {
   display: flex; align-items: center; gap: 9px;
-  padding: 9px 16px; cursor: pointer;
-  font-size: 13px; font-weight: 500; color: var(--text-muted);
+  padding: 10px 18px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,.65);
   border-left: 3px solid transparent; border-radius: 0;
   transition: all .12s; user-select: none;
 }
-.sidebar-item:hover { background: var(--bg); color: var(--text); }
-.sidebar-item.active { color: var(--text); background: var(--bg); border-left-color: var(--accent); }
+.sidebar-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.sidebar-item.active { color: var(--gold); background: rgba(201,162,39,.12); border-left-color: var(--gold); }
 .sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; stroke: currentColor; fill: none; }
-.sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); }
+.sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.12); }
 
 /* ─── Main content ─── */
 .main-content {
@@ -235,35 +243,43 @@ textarea { resize: vertical; min-height: 64px; }
   padding: 6px 10px; cursor: pointer; font-size: 10px; font-weight: 500;
   color: var(--text-muted); flex: 1;
 }
-.mob-nav-item.active { color: var(--text); }
+.mob-nav-item.active { color: var(--gold); }
 .mob-nav-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
 
 #auth-page {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  background-color: #f4f5f7;
-  background-image: url('assets/products/LOGGIN-BACKGROUND.jpg');
+  padding: 24px;
+  background: var(--accent);
+  background-image: linear-gradient(135deg, rgba(11,31,58,.97) 0%, rgba(21,42,69,.95) 100%),
+    url('assets/products/LOGGIN-BACKGROUND.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-.auth-box { width: 100%; max-width: 400px; }
-.auth-logo {
-  font-weight: 700;
-  font-size: 20px;
-  letter-spacing: -.3px;
-  margin-bottom: 2px;
-  color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+.auth-shell {
+  display: flex; width: 100%; max-width: 920px;
+  min-height: 520px; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
 }
-.auth-tagline {
-  font-size: 13px;
-  color: #ffffff;
-  margin-bottom: 28px;
-  font-weight: 500;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+.auth-brand-panel {
+  flex: 1; min-width: 0;
+  background: linear-gradient(160deg, #0B1F3A 0%, #152A45 60%, #1E3A5F 100%);
+  padding: 48px 36px; display: flex; flex-direction: column; justify-content: center;
+  border-right: 3px solid var(--gold);
 }
+.auth-brand-kb { font-size: 52px; font-weight: 700; color: var(--gold); letter-spacing: -1px; line-height: 1; }
+.auth-brand-full { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 4px; margin-top: 6px; }
+.auth-brand-desc { font-size: 14px; color: rgba(255,255,255,.72); margin-top: 20px; line-height: 1.65; max-width: 280px; }
+.auth-form-panel { flex: 1; min-width: 0; background: var(--surface); padding: 32px 28px; overflow-y: auto; }
+@media (max-width: 720px) {
+  .auth-shell { flex-direction: column; max-width: 420px; min-height: auto; }
+  .auth-brand-panel { padding: 28px 24px; border-right: none; border-bottom: 3px solid var(--gold); }
+  .auth-brand-kb { font-size: 40px; }
+  .auth-form-panel { padding: 24px 20px; }
+}
+
+.auth-box { width: 100%; max-width: 100%; }
 
 .role-selector { display: flex; gap: 8px; margin-bottom: 20px; }
 .role-btn {
@@ -273,9 +289,9 @@ textarea { resize: vertical; min-height: 64px; }
   color: var(--text-muted); transition: all .12s; font-family: var(--font);
 }
 .role-btn:hover { border-color: var(--border-md); color: var(--text); background: var(--bg); }
-.role-btn.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.role-btn.active { background: var(--accent); color: var(--gold); border-color: var(--accent); }
 
-.auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
+.auth-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
 .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; gap: 0; }
 .auth-tab {
   flex: 1; padding: 9px; text-align: center; font-size: 13px; font-weight: 500;
@@ -283,7 +299,7 @@ textarea { resize: vertical; min-height: 64px; }
   margin-bottom: -1px; transition: all .12s; background: none; border-top: none; border-left: none; border-right: none;
   font-family: var(--font);
 }
-.auth-tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.auth-tab.active { color: var(--accent); border-bottom-color: var(--gold); font-weight: 600; }
 .auth-form-pane { display: none; }
 .auth-form-pane.active { display: block; }
 .auth-help { font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center; }
@@ -314,7 +330,7 @@ textarea { resize: vertical; min-height: 64px; }
   font-size: 12px; font-weight: 600; padding: 6px 0;
   border-radius: var(--radius-sm); background: var(--bg); color: var(--text-muted);
 }
-.product-tile.selected .qty-display { background: var(--accent); color: var(--accent-fg); }
+.product-tile.selected .qty-display { background: var(--gold); color: var(--accent); }
 
 .qty-modal-display {
   font-size: 48px; font-weight: 700; text-align: center; margin: 20px 0 16px;
@@ -327,7 +343,7 @@ textarea { resize: vertical; min-height: 64px; }
   cursor: pointer; transition: all .12s; color: var(--text-2);
 }
 .qty-chip:hover { border-color: var(--accent); background: var(--bg); }
-.qty-chip.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.qty-chip.active { background: var(--gold); color: var(--accent); border-color: var(--gold); }
 .qty-manual-row { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .qty-manual-row input { text-align: center; font-size: 18px; font-weight: 600; }
 .qty-step-btn {
@@ -342,7 +358,7 @@ textarea { resize: vertical; min-height: 64px; }
 .hamburger-btn {
   display: none;
   background: none; border: none; cursor: pointer;
-  padding: 8px; margin-right: 4px; color: var(--text);
+  padding: 8px; margin-right: 4px; color: #fff;
 }
 .hamburger-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; }
 
@@ -387,7 +403,7 @@ textarea { resize: vertical; min-height: 64px; }
   font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
   border: 1px solid var(--border-md); background: var(--surface); cursor: pointer; color: var(--text-muted);
 }
-.clock-ampm-toggle button.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.clock-ampm-toggle button.active { background: var(--gold); color: var(--accent); border-color: var(--gold); }
 
 .clock-face {
   position: relative; width: 220px; height: 220px; margin: 0 auto;
@@ -395,7 +411,7 @@ textarea { resize: vertical; min-height: 64px; }
 }
 .clock-center {
   position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
-  background: var(--accent); border-radius: 50%; transform: translate(-50%,-50%);
+  background: var(--gold); border-radius: 50%; transform: translate(-50%,-50%);
 }
 .clock-num {
   position: absolute; width: 36px; height: 36px; margin: -18px;
@@ -404,7 +420,7 @@ textarea { resize: vertical; min-height: 64px; }
   transition: all .12s;
 }
 .clock-num:hover { background: var(--border); }
-.clock-num.active { background: var(--accent); color: var(--accent-fg); }
+.clock-num.active { background: var(--gold); color: var(--accent); }
 
 
 
@@ -420,7 +436,7 @@ textarea { resize: vertical; min-height: 64px; }
   display: flex; flex-direction: column; align-items: center;
 }
 .product-tile:hover { border-color: var(--border-md); }
-.product-tile.selected { border-color: var(--accent); background: #f8faff; }
+.product-tile.selected { border-color: var(--gold); background: var(--gold-bg); }
 .prod-img { width: 72px; height: 72px; border-radius: 8px; margin-bottom: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 36px; line-height: 1; overflow: hidden; }
 .prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prod-name  { font-size: 12px; font-weight: 600; color: var(--text); }
@@ -444,8 +460,8 @@ textarea { resize: vertical; min-height: 64px; }
 
 /* ─── Stats ─── */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); }
-.stat-val   { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.5px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--gold); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); }
+.stat-val   { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.5px; color: var(--accent); }
 .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
 
 /* ─── Data table ─── */
@@ -462,7 +478,7 @@ table.dt tbody tr:hover td { background: var(--bg); }
 /* ─── Chart bars ─── */
 .chart-wrap { display: flex; align-items: flex-end; gap: 6px; height: 110px; }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 4px; opacity: .75; position: relative; transition: opacity .15s; }
+.bar { width: 100%; background: var(--gold); border-radius: 3px 3px 0 0; min-height: 4px; opacity: .85; position: relative; transition: opacity .15s; }
 .bar:hover { opacity: 1; }
 .bar-count { font-size: 10px; color: var(--text-muted); position: absolute; top: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
 .bar-lbl { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: center; }
@@ -481,11 +497,10 @@ table.dt tbody tr:hover td { background: var(--bg); }
 .notif-item:last-child { border-bottom: none; }
 .notif-msg  { font-size: 13px; color: var(--text-2); line-height: 1.5; }
 .notif-ts   { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
-.notif-item.unread { background: #eff6ff; padding-left: 10px; padding-right: 10px; border-radius: 6px; border: 1px solid #dbeafe; margin-bottom: 6px; }
+.notif-item.unread { background: var(--gold-bg); padding-left: 10px; padding-right: 10px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 6px; }
 
-/* ───  area ─── */
-.-zone { border: 2px dashed var(--border-md); border-radius: var(--radius-sm); padding: 28px 16px; text-align: center; cursor: pointer; position: relative; transition: border-color .15s; background: var(--surface-2); }
-.upload-zone:hover { border-color: var(--accent); }
+.upload-zone { border: 2px dashed var(--border-md); border-radius: var(--radius-sm); padding: 28px 16px; text-align: center; cursor: pointer; position: relative; transition: border-color .15s; background: var(--surface-2); }
+.upload-zone:hover { border-color: var(--gold); }
 .upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 1; }
 .upload-zone-icon { font-size: 28px; margin-bottom: 8px; color: var(--text-muted); }
 .upload-zone p { font-size: 13px; color: var(--text-muted); }
@@ -521,7 +536,14 @@ table.dt tbody tr:hover td { background: var(--bg); }
 
 /* ─── Progress bar ─── */
 .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
-.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+.progress-fill { height: 100%; background: var(--gold); border-radius: 3px; }
+
+/* ─── API config modal ─── */
+.api-modal-overlay { position: fixed; inset: 0; background: rgba(11,31,58,.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
+.api-modal-box { background: var(--surface); border-radius: var(--radius); padding: 24px; max-width: 420px; width: 100%; box-shadow: var(--shadow); border-top: 3px solid var(--gold); }
+.api-modal-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--accent); }
+.api-modal-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+.api-modal-actions { display: flex; gap: 8px; margin-top: 16px; }
 
 .icon { display: inline-flex; align-items: center; justify-content: center; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
@@ -530,11 +552,15 @@ table.dt tbody tr:hover td { background: var(--bg); }
 <body>
 
 <!-- AUTH PAGE -->
-<!-- AUTH PAGE -->
 <div id="auth-page" class="hidden">
+  <div class="auth-shell">
+    <div class="auth-brand-panel">
+      <div class="auth-brand-kb">KB</div>
+      <div class="auth-brand-full">ENTERPRISES</div>
+      <p class="auth-brand-desc">Railway pantry &amp; stall order management — serving passengers, crew, and pantry coordinators across the network.</p>
+    </div>
+    <div class="auth-form-panel">
   <div class="auth-box">
-    <div class="auth-logo">TrainServe</div>
-    <div class="auth-tagline">Railway pantry order management platform</div>
 
     <div class="role-selector" id="role-selector">
       <button class="role-btn active" onclick="setRole('user')">Passenger / Pantry</button>
@@ -542,7 +568,7 @@ table.dt tbody tr:hover td { background: var(--bg); }
       <button class="role-btn" onclick="setRole('admin')">Admin</button>
     </div>
     <p class="auth-help" style="margin-top:-8px;margin-bottom:16px">
-      <a href="#" onclick="document.getElementById('app').classList.remove('hidden');document.getElementById('auth-page').classList.add('hidden');window.location.hash='';return false;" style="color:#fff;text-decoration:underline;">← Back to browsing</a>
+      <a href="#" onclick="document.getElementById('app').classList.remove('hidden');document.getElementById('auth-page').classList.add('hidden');window.location.hash='';return false;" style="color:var(--text-muted);text-decoration:underline;">← Back to browsing</a>
     </p>
 
     <!-- User card -->
@@ -608,9 +634,10 @@ table.dt tbody tr:hover td { background: var(--bg); }
         <div class="card-title">Admin Sign In</div>
         <div class="card-subtitle">Restricted access — administrators only</div>
       </div>
-      <div class="form-group"><label>Admin email</label><input type="email" id="a-email" placeholder="admin@trainserve.in" autocomplete="email"></div>
+      <div class="form-group"><label>Admin email</label><input type="email" id="a-email" placeholder="admin@kbenterprises.in" autocomplete="email"></div>
       <div class="form-group"><label>Password</label><input type="password" id="a-pass" placeholder="Enter password" autocomplete="current-password"></div>
       <button class="btn btn-primary btn-full" onclick="loginAs('admin')">Sign In</button>
+    </div>
     </div>
   </div>
 </div>
@@ -621,7 +648,7 @@ table.dt tbody tr:hover td { background: var(--bg); }
   <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()">
     <svg viewBox="0 0 24 24" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </button>
-  <div class="topbar-brand">TrainServe <span id="topbar-role-tag"></span></div>
+  <div class="topbar-brand"><em>KB</em> ENTERPRISES <span id="topbar-role-tag"></span></div>
     <div class="topbar-right">
       <span class="topbar-user" id="topbar-user"></span>
       <button class="btn btn-outline btn-sm" onclick="logout()">Sign out</button>
@@ -654,14 +681,14 @@ table.dt tbody tr:hover td { background: var(--bg); }
 </div>
 
 <!-- API CONFIGURATION MODAL -->
-<div id="api-config-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-  <div style="background: white; border-radius: 8px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-    <h2 style="margin-bottom: 12px; font-size: 18px; font-weight: 700;">Configure Backend URL</h2>
-    <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">Enter your ngrok HTTPS URL or backend domain to connect:</p>
-    <input type="text" id="api-url-input" placeholder="https://your-ngrok-url.ngrok-free.dev/api" style="margin-bottom: 16px; width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 13px;">
-    <div style="display: flex; gap: 8px;">
-      <button onclick="saveApiUrl()" style="flex: 1; padding: 10px; background: #111827; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">Save & Connect</button>
-      <button onclick="closeApiConfigModal()" style="flex: 1; padding: 10px; background: #e5e7eb; color: #111827; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">Cancel</button>
+<div id="api-config-modal" class="api-modal-overlay hidden">
+  <div class="api-modal-box">
+    <h2>Configure Backend URL</h2>
+    <p>Enter your backend HTTPS URL (Render, ngrok, or local server):</p>
+    <input type="text" id="api-url-input" placeholder="https://your-backend.onrender.com/api" class="mb-16">
+    <div class="api-modal-actions">
+      <button class="btn btn-primary btn-full" onclick="saveApiUrl()">Save &amp; Connect</button>
+      <button class="btn btn-outline btn-full" onclick="closeApiConfigModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -686,16 +713,28 @@ table.dt tbody tr:hover td { background: var(--bg); }
 // Default backend URL for GitHub Pages (user can override via UI)
 const DEFAULT_BACKEND_URL_GITHUB_PAGES = 'https://trainserve-backend.onrender.com/api';
 
+function lsGet(key) {
+  return localStorage.getItem('kb_' + key) || localStorage.getItem('trainserve_' + key);
+}
+function lsSet(key, val) {
+  localStorage.setItem('kb_' + key, val);
+}
+
+function getTodayIST() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+}
+
 // Get API URL based on environment
 function getApiUrl() {
-  if (window.location.hostname === 'ajaisivakumar.github.io') {
-    // On GitHub Pages: try to load from localStorage, fall back to default
-    const savedUrl = localStorage.getItem('trainserve_api_url');
-    return savedUrl || DEFAULT_BACKEND_URL_GITHUB_PAGES;
-  } else {
-    // On localhost: use relative path
-    return '/api';
+  const host = window.location.hostname;
+  const isGitHubPages = host.endsWith('github.io');
+  if (isGitHubPages) {
+    return lsGet('api_url') || DEFAULT_BACKEND_URL_GITHUB_PAGES;
   }
+  if (host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:') {
+    return 'http://localhost:8080/api';
+  }
+  return '/api';
 }
 
   
@@ -722,7 +761,7 @@ function saveApiUrl() {
   }
   
   // Save to localStorage
-  localStorage.setItem('trainserve_api_url', url);
+  lsSet('api_url', url);
   API = url;
   
   console.log('✓ API URL saved:', API);
@@ -737,7 +776,7 @@ function saveApiUrl() {
 function openApiConfigModal() {
   const modal = document.getElementById('api-config-modal');
   const input = document.getElementById('api-url-input');
-  input.value = localStorage.getItem('trainserve_api_url') || '';
+  input.value = lsGet('api_url') || '';
   modal.classList.remove('hidden');
 }
 
@@ -781,8 +820,8 @@ const BASE_PRODUCTS = [
 let PRODUCTS = [];
 
 function rebuildProducts() {
-  const customs    = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
-  const overrides  = JSON.parse(localStorage.getItem('trainserve_product_overrides') || '{}');
+  const customs    = JSON.parse(lsGet('custom_products') || '[]');
+  const overrides  = JSON.parse(lsGet('product_overrides') || '{}');
 
   let merged = [...BASE_PRODUCTS, ...customs].map(p => ({ ...p, inStock: true }));
 
@@ -794,23 +833,23 @@ function rebuildProducts() {
 }
 
 function saveCustomProduct(product) {
-  const customs = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+  const customs = JSON.parse(lsGet('custom_products') || '[]');
   customs.push(product);
-  localStorage.setItem('trainserve_custom_products', JSON.stringify(customs));
+  lsSet('custom_products', JSON.stringify(customs));
   rebuildProducts();
 }
 
 function saveOverride(id, changes) {
-  const overrides = JSON.parse(localStorage.getItem('trainserve_product_overrides') || '{}');
+  const overrides = JSON.parse(lsGet('product_overrides') || '{}');
   overrides[id] = { ...(overrides[id]||{}), ...changes };
-  localStorage.setItem('trainserve_product_overrides', JSON.stringify(overrides));
+  lsSet('product_overrides', JSON.stringify(overrides));
 
   // If it's a custom product (not base), update it directly in the customs array too
-  const customs = JSON.parse(localStorage.getItem('trainserve_custom_products') || '[]');
+  const customs = JSON.parse(lsGet('custom_products') || '[]');
   const idx = customs.findIndex(c => c.id === id);
   if (idx !== -1) {
     customs[idx] = { ...customs[idx], ...changes };
-    localStorage.setItem('trainserve_custom_products', JSON.stringify(customs));
+    lsSet('custom_products', JSON.stringify(customs));
   }
   rebuildProducts();
 }
@@ -1654,7 +1693,7 @@ async function markRead() {
 /* ─── Admin pages ─── */
 async function renderDashboard(el) {
   try {
-    const todayStr = new Date().toISOString().slice(0,10);
+    const todayStr = getTodayIST();
     const [stats, orders, crew] = await Promise.all([
       apiFetch('/orders/stats?date=' + todayStr),
       apiFetch('/orders/all?date=' + todayStr),
@@ -1675,8 +1714,8 @@ async function renderDashboard(el) {
         ${orders.slice(0,5).map(o => `
           <div class="flex jc-sb items-c" style="padding:10px 0;border-bottom:1px solid var(--border)">
             <div>
-              <div style="font-size:13px;font-weight:600">${o.id} <span style="font-weight:400;color:var(--text-muted)">— ${o.trainName}</span></div>
-              <div style="font-size:11px;color:var(--text-muted)">${o.userName} · ETA ${o.eta}</div>
+              <div style="font-size:13px;font-weight:600">${o.id} <span style="font-weight:400;color:var(--text-muted)">— ${(o.orderType === 'stall' ? o.stallName : o.trainName) || o.trainName}</span></div>
+              <div style="font-size:11px;color:var(--text-muted)">${o.userName}${o.orderType === 'stall' ? '' : ' · ETA ' + o.eta}</div>
             </div>
             <span class="badge badge-${o.status.toLowerCase()}">${o.status}</span>
           </div>`).join('')}
@@ -1718,13 +1757,15 @@ async function renderAllOrders(el) {
         </div>
         <div class="card table-scroll" style="padding:0;overflow-x:auto">
           <table class="dt">
-            <thead><tr><th>ID</th><th>Customer</th><th>Train</th><th>ETA</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>ID</th><th>Customer</th><th>Train / Stall</th><th>ETA</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
               ${list.map(o => `<tr>
                 <td style="font-weight:600">${o.id}</td>
                 <td>${o.userName}</td>
-                <td>${o.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${o.trainName}</span></td>
-                <td>${o.eta}</td>
+                <td>${o.orderType === 'stall'
+                  ? `<span style="font-size:11px;color:var(--text-muted)">Stall</span><br>${o.stallName || o.trainName}`
+                  : `${o.trainNo}<br><span style="font-size:11px;color:var(--text-muted)">${o.trainName}</span>`}</td>
+                <td>${o.orderType === 'stall' ? '—' : o.eta}</td>
                 <td>₹${o.total}</td>
                 <td><span class="badge badge-${o.status.toLowerCase()}">${o.status}</span></td>
                 <td>
@@ -1861,7 +1902,7 @@ async function deleteCrew(crewId) {
 
 async function renderAnalytics(el) {
   try {
-    const todayStr = new Date().toISOString().slice(0,10);
+    const todayStr = getTodayIST();
     const orders = await apiFetch('/orders/all?date=' + todayStr);
     const crew   = await apiFetch('/users/crew');
     const done   = orders.filter(o => o.status === 'COMPLETED');
@@ -2032,6 +2073,7 @@ function orderCard(o, viewer) {
   d.className = 'order-card';
   const crew = o.assignedCrewId ? crewById(o.assignedCrewId) : null;
   const status = o.status?.toLowerCase() || 'pending';
+  const isStall = (o.orderType || 'train') === 'stall';
   let actions = '';
   if (viewer === 'crew') {
     if (status === 'pending')
@@ -2044,17 +2086,22 @@ function orderCard(o, viewer) {
       actions += `<button class="btn btn-outline btn-sm" onclick="openAssign('${o.id}')">Assign Crew</button>`;
     actions += ` <button class="btn btn-outline btn-sm" onclick="openDetail('${o.id}')">View Details</button>`;
   }
+  const metaHtml = isStall
+    ? `<div class="meta-item"><strong>${o.userName}</strong>Owner</div>
+       <div class="meta-item"><strong>${o.stallName || o.trainName}</strong>Stall</div>
+       <div class="meta-item"><strong>${o.stallLocation || o.currentLocation}</strong>Location</div>`
+    : `<div class="meta-item"><strong>${o.userName}</strong>Customer</div>
+       <div class="meta-item"><strong>${o.trainNo}</strong>Train No.</div>
+       <div class="meta-item"><strong>${o.trainName}</strong>Train Name</div>
+       <div class="meta-item"><strong>${o.currentLocation}</strong>Location</div>
+       <div class="meta-item"><strong>${o.eta}</strong>ETA</div>`;
   d.innerHTML = `
     <div class="order-card-header">
       <div><div class="order-id">${o.id}</div><div class="order-time">${fmt(o.createdAt)}</div></div>
-      <span class="badge badge-${status}">${status}</span>
+      <span class="badge badge-${status}">${isStall ? 'STALL · ' : ''}${status.toUpperCase()}</span>
     </div>
     <div class="order-meta">
-      <div class="meta-item"><strong>${o.userName}</strong>Customer</div>
-      <div class="meta-item"><strong>${o.trainNo}</strong>Train No.</div>
-      <div class="meta-item"><strong>${o.trainName}</strong>Train Name</div>
-      <div class="meta-item"><strong>${o.currentLocation}</strong>Location</div>
-      <div class="meta-item"><strong>${o.eta}</strong>ETA</div>
+      ${metaHtml}
       ${crew ? `<div class="meta-item"><strong>${crew.name}</strong>Crew</div>` : ''}
       ${o.completedAt ? `<div class="meta-item"><strong>${fmt(o.completedAt)}</strong>Completed</div>` : ''}
     </div>
@@ -2327,7 +2374,7 @@ function toggleSidebar() {
 
 
 function renderDailyReport(el) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayIST();
   el.innerHTML = `
     <div class="page-header">
       <div><div class="section-title">Daily Report</div>
@@ -2362,7 +2409,7 @@ async function downloadDailyReport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `TrainServe-Report-${date}.xlsx`;
+    a.download = `KB-Enterprises-Report-${date}.xlsx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
