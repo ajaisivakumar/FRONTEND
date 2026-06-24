@@ -21,7 +21,8 @@
 <link rel="preload" as="image" href="assets/products/LOGGIN-BACKGROUND.jpg"> 
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
 <style>/* ─── Reset ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
@@ -744,6 +745,394 @@ table.dt tbody tr:hover td { background: var(--bg); }
     display: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════
+   ✨ PREMIUM VISUAL UPGRADES — KB ENTERPRISES
+   Pure CSS enhancements. Zero logic changes.
+══════════════════════════════════════════════════ */
+
+/* ─── Premium Font for Headings ─── */
+.section-title, .card-title, .modal-title, .stat-val,
+.auth-brand-full, .auth-brand-kb, h1, h2, h3 {
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+}
+
+/* ─── Topbar: Subtle Gradient + Glass ─── */
+.topbar {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFF 100%);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+  box-shadow: 0 1px 12px rgba(37, 99, 235, 0.06);
+}
+.topbar-brand {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 18px;
+}
+.topbar-brand em {
+  background: linear-gradient(135deg, #2563EB, #3B82F6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Sidebar: Premium Polish ─── */
+.sidebar {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFF 100%);
+  box-shadow: 1px 0 10px rgba(15, 23, 42, 0.04);
+}
+.sidebar-item.active {
+  background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+  color: #1D4ED8;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12);
+}
+
+/* ─── Stat Cards: Gradient + Animation ─── */
+.stat-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFF 100%);
+  border-top: 3px solid var(--accent);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle at top right, rgba(37,99,235,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.12);
+}
+.stat-val { font-size: 34px; letter-spacing: -1px; }
+
+/* ─── Cards: Upgraded ─── */
+.card {
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 2px 16px rgba(15, 23, 42, 0.04);
+}
+
+/* ─── Buttons: Premium ─── */
+.btn {
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary {
+  background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  border: none;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+}
+.btn-green {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  border: none;
+}
+
+/* ─── Product Tiles: Rich Hover ─── */
+.product-tile {
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.product-tile:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+.product-tile.selected {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+.prod-img {
+  background: linear-gradient(135deg, #F1F5F9, #E2E8F0);
+  border-radius: 12px;
+}
+
+/* ─── Order Cards: Premium Look ─── */
+.order-card {
+  border-radius: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+.order-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--accent);
+}
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ─── Auth Page: Premium Redesign ─── */
+#auth-page {
+  background: linear-gradient(135deg, #EFF6FF 0%, #F0F9FF 50%, #F8FAFC 100%);
+}
+.auth-shell {
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(37, 99, 235, 0.12), 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+.auth-brand-panel {
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 60%, #3B82F6 100%);
+  position: relative;
+  overflow: hidden;
+}
+.auth-brand-panel::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 50%;
+}
+.auth-brand-panel::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; left: -20px;
+  width: 180px; height: 180px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+.auth-brand-kb {
+  color: #FFFFFF;
+  font-size: 64px;
+  text-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  -webkit-text-fill-color: #FFFFFF;
+}
+.auth-brand-full {
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 5px;
+}
+.auth-brand-desc {
+  color: rgba(255,255,255,0.75);
+  line-height: 1.75;
+}
+
+/* ─── Role Buttons ─── */
+.role-btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
+.role-btn.active {
+  background: linear-gradient(135deg, #2563EB, #3B82F6);
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* ─── Badges: Enhanced ─── */
+.badge {
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.badge-pending   { background: #FEF3C7; color: #B45309; }
+.badge-accepted  { background: #DBEAFE; color: #1D4ED8; }
+.badge-completed { background: #D1FAE5; color: #047857; }
+.badge-cancelled { background: #FEE2E2; color: #B91C1C; }
+
+/* ─── Form Inputs: Premium Focus ─── */
+input, select, textarea {
+  border-radius: 10px;
+  border: 1.5px solid #CBD5E1;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  background: #FAFCFF;
+}
+
+/* ─── Modal: Scale Animation ─── */
+.modal-overlay {
+  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.45);
+}
+.modal {
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+  animation: modalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes modalIn {
+  from { transform: scale(0.92) translateY(12px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* ─── Toasts: Premium ─── */
+.toast {
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+}
+.toast.ok   { background: linear-gradient(135deg, #059669, #10B981); }
+.toast.err  { background: linear-gradient(135deg, #DC2626, #EF4444); }
+.toast.warn { background: linear-gradient(135deg, #D97706, #F59E0B); }
+
+/* ─── Mobile Nav: Premium ─── */
+.mob-nav {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFBFF 100%);
+  box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.06);
+}
+.mob-nav-item {
+  border-radius: 10px;
+  min-width: 56px;
+  transition: all 0.15s ease;
+}
+.mob-nav-item.active {
+  color: var(--accent);
+  background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(59,130,246,0.05));
+}
+
+/* ─── Section Titles: Gradient ─── */
+.section-title {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Page Entrance Animation ─── */
+#main-content > * {
+  animation: pageIn 0.25s ease-out;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Chart Bars: Gradient ─── */
+.bar {
+  background: linear-gradient(180deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+/* ─── Progress Fill: Animated ─── */
+.progress-fill {
+  background: linear-gradient(90deg, #3B82F6, #2563EB);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Crew Avatar: Enhanced ─── */
+.crew-avatar {
+  background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+  border: 1.5px solid #BFDBFE;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  font-weight: 800;
+}
+
+/* ─── Upload Zone ─── */
+.upload-zone {
+  border-radius: 14px;
+  background: linear-gradient(135deg, #F8FAFF, #FAFCFF);
+}
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, #EFF6FF, #F0F9FF);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
+}
+
+/* ─── Popup Reminder: Enhanced ─── */
+.popup-reminder {
+  background: linear-gradient(135deg, #FFFFFF, #F8FAFF);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(37, 99, 235, 0.15), 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+/* ─── Scrollbar: Minimal ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* ─── Selection Color ─── */
+::selection { background: rgba(37, 99, 235, 0.15); color: var(--text); }
+
+/* ─── Mobile Touch Improvements ─── */
+@media (max-width: 680px) {
+  .btn { min-height: 46px; }
+  .btn-sm { min-height: 38px; }
+  input, select { min-height: 46px; font-size: 16px; }
+  .product-tile { border-radius: 16px; }
+  .card { border-radius: 16px; padding: 20px 16px; }
+  .section-title { font-size: 20px; }
+}
+
+/* ─── Sticky mobile order bar ─── */
+.mobile-order-bar {
+  display: none;
+  position: fixed;
+  left: 0; right: 0;
+  bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  z-index: 90;
+  background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, #FFFFFF 100%);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(8px);
+}
+@media (max-width: 680px) {
+  .mobile-order-bar.show { display: flex; align-items: center; gap: 12px; }
+  body.has-order-bar .main-content { padding-bottom: 150px !important; }
+}
+@media (min-width: 681px) {
+  .mobile-order-bar { bottom: 0; }
+}
+
+/* ─── Loading skeleton ─── */
+.loading-shell { padding: 8px 0; }
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, #E8EDF3 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+.skeleton-card { height: 120px; margin-bottom: 12px; border-radius: var(--radius); }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ─── Status filter pills ─── */
+.filter-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-pill {
+  padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+  cursor: pointer; transition: all 0.15s ease; font-family: var(--font);
+}
+.filter-pill.active {
+  background: var(--accent); color: var(--accent-fg); border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+* { -webkit-tap-highlight-color: transparent; }
+
+/* ─── Auth Tabs ─── */
+.auth-tab {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
 </style>
 </head>
 <body>
@@ -837,6 +1226,7 @@ table.dt tbody tr:hover td { background: var(--bg); }
     </div>
     </div>
   </div>
+  </div>
 </div>
 
 <!-- MAIN APP -->
@@ -888,6 +1278,15 @@ table.dt tbody tr:hover td { background: var(--bg); }
       <button class="btn btn-outline btn-full" onclick="closeApiConfigModal()">Cancel</button>
     </div>
   </div>
+</div>
+
+<!-- MOBILE ORDER BAR (place-order page) -->
+<div class="mobile-order-bar" id="mobile-order-bar">
+  <div style="flex:1">
+    <div class="small muted" id="mob-bar-count">0 items</div>
+    <div style="font-size:18px;font-weight:800;color:var(--accent)" id="mob-bar-total">₹0</div>
+  </div>
+  <button class="btn btn-primary" style="flex:1" onclick="document.getElementById('summary-card')?.scrollIntoView({behavior:'smooth'});document.getElementById('submit-btn')?.focus()">Review Order</button>
 </div>
 
 <!-- TOASTS -->
@@ -1328,8 +1727,7 @@ function launchGuestApp() {
     <span class="topbar-user" id="topbar-user">Browsing as guest</span>
     <button class="btn btn-outline btn-sm" onclick="showAuthPage('user')">Sign In</button>`;
   currentRole = 'guest';
- buildGuestNav();
-  document.getElementById('main-content').style.paddingBottom = '20px';
+  buildGuestNav();
   setTimeout(() => navigateTo('place-order'), 0);
 }
 
@@ -1342,9 +1740,17 @@ function buildGuestNav() {
       <span class="icon">${ICONS[it.icon]}</span> ${it.label}
     </div>`;
   });
-  sb.innerHTML += `<div class="sidebar-footer"><button class="btn btn-primary btn-full btn-sm" onclick="showAuthPage('user')">Sign In</button></div>`;
-  // No bottom nav for guests — they're already on the only page they can see.
-  mn.innerHTML = '';
+  sb.innerHTML += `<div class="sidebar-footer">
+    <button class="btn btn-primary btn-full btn-sm" onclick="showAuthPage('user')">Sign In</button>
+    ${window.location.hostname.endsWith('github.io') ? '<button class="btn btn-outline btn-full btn-sm mt-8" onclick="openApiConfigModal()">Backend Settings</button>' : ''}
+  </div>`;
+  mn.innerHTML = `
+    <div class="mob-nav-item active" id="mi-place-order" onclick="navigateTo('place-order')">
+      <span class="icon">${ICONS.plus}</span>Browse
+    </div>
+    <div class="mob-nav-item" onclick="showAuthPage('user')">
+      <span class="icon">${ICONS.users}</span>Sign In
+    </div>`;
 }
 
 // Shows the existing login/signup card, defaulting to the requested role.
@@ -1394,6 +1800,9 @@ function buildNav() {
       <span class="icon">${ICONS[it.icon]}</span> ${it.label}
     </div>`;
   });
+  if (window.location.hostname.endsWith('github.io')) {
+    sb.innerHTML += `<div class="sidebar-footer"><button class="btn btn-outline btn-full btn-sm" onclick="openApiConfigModal()">Backend Settings</button></div>`;
+  }
   mobItems.forEach(it => {
     mn.innerHTML += `<div class="mob-nav-item" id="mi-${it.id}" onclick="navigateTo('${it.id}')">
       <span class="icon">${ICONS[it.icon]}</span>${it.label}
@@ -1414,7 +1823,7 @@ function navigateTo(page) {
   document.getElementById('si-'+page)?.classList.add('active');
   document.getElementById('mi-'+page)?.classList.add('active');
   const mc = document.getElementById('main-content');
-  mc.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Loading…</div>';
+  mc.innerHTML = '<div class="loading-shell"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>';
   ({
     'place-order':    renderPlaceOrder,
     'my-orders':      renderMyOrders,
@@ -1430,6 +1839,10 @@ function navigateTo(page) {
     'add-product':    renderAddProduct,
     'daily-report': renderDailyReport,
   })[page]?.(mc);
+  if (page !== 'place-order') {
+    document.getElementById('mobile-order-bar')?.classList.remove('show');
+    document.body.classList.remove('has-order-bar');
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1703,6 +2116,7 @@ function renderPlaceOrder(el) {
       <button class="btn btn-primary btn-full mt-16" id="submit-btn" onclick="submitOrder()">Place Order</button>
     </div>`;
   buildProductGrid();
+  updateMobileOrderBar(0, 0);
 }
 
 function setOrderType(type) {
@@ -1770,15 +2184,31 @@ function refreshSummary() {
   const body = document.getElementById('summary-body');
   const totalEl = document.getElementById('total-row');
   const ids = Object.keys(orderCart);
-  if (!ids.length) { body.innerHTML = '<p class="muted small">No items selected yet.</p>'; totalEl.lastElementChild.textContent = '₹0'; return; }
-  let total = 0, rows = '';
+  if (!ids.length) {
+    body.innerHTML = '<p class="muted small">No items selected yet.</p>';
+    if (totalEl) totalEl.lastElementChild.textContent = '₹0';
+    updateMobileOrderBar(0, 0);
+    return;
+  }
+  let total = 0, rows = '', count = 0;
   ids.forEach(id => {
     const p = PRODUCTS.find(x => x.id === id), qty = orderCart[id], sub = p.price * qty;
-    total += sub;
+    total += sub; count += qty;
     rows += `<tr><td>${p.name}</td><td style="color:var(--text-muted)">× ${qty}</td><td>₹${sub}</td></tr>`;
   });
   body.innerHTML = `<table class="summary-table"><tbody>${rows}</tbody></table>`;
-  totalEl.lastElementChild.textContent = '₹' + total;
+  if (totalEl) totalEl.lastElementChild.textContent = '₹' + total;
+  updateMobileOrderBar(count, total);
+}
+
+function updateMobileOrderBar(count, total) {
+  const bar = document.getElementById('mobile-order-bar');
+  if (!bar) return;
+  const show = currentPage === 'place-order' && count > 0;
+  bar.classList.toggle('show', show);
+  document.body.classList.toggle('has-order-bar', show);
+  document.getElementById('mob-bar-count').textContent = count + (count === 1 ? ' item' : ' items');
+  document.getElementById('mob-bar-total').textContent = '₹' + total;
 }
 
 async function submitOrder() {
@@ -1835,31 +2265,76 @@ async function submitOrder() {
 async function renderMyOrders(el) {
   try {
     const orders = await apiFetch('/orders/my');
-    el.innerHTML = `<div class="page-header">
-      <div><div class="section-title">My Orders</div></div>
-      <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
-    </div>`;
-    if (!orders.length) { el.appendChild(emptyState('No orders placed yet.')); return; }
-    orders.forEach(o => el.appendChild(orderCard(o, 'user')));
+    let query = '';
+    const draw = () => {
+      const filtered = filterOrdersByQuery(orders, query);
+      el.innerHTML = `<div class="page-header">
+        <div><div class="section-title">My Orders</div>
+        <div class="section-sub">${orders.length} order${orders.length !== 1 ? 's' : ''} total</div></div>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
+      </div>
+      <div class="search-filter-row">
+        <input type="search" placeholder="Search by order ID, train, or item…" value="${query}"
+          oninput="window.__orderSearch(this.value)">
+      </div>
+      <div id="orders-list"></div>`;
+      const list = document.getElementById('orders-list');
+      if (!filtered.length) {
+        list.appendChild(emptyState(query ? 'No orders match your search.' : 'No orders placed yet.'));
+        return;
+      }
+      filtered.forEach(o => list.appendChild(orderCard(o, 'user')));
+    };
+    window.__orderSearch = q => { query = q; draw(); };
+    draw();
   } catch (e) { el.innerHTML = errState(e.message); }
 }
 
 async function renderPendingOrders(el) {
   try {
     const orders = await apiFetch('/orders/pending');
-    el.innerHTML = `<div class="page-header"><div><div class="section-title">Incoming Orders</div>
-      <div class="section-sub">Accept an order to begin delivery</div></div></div>`;
-    if (!orders.length) { el.appendChild(emptyState('No pending orders at this time.')); return; }
-    orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+    let query = '';
+    const draw = () => {
+      const filtered = filterOrdersByQuery(orders, query);
+      el.innerHTML = `<div class="page-header"><div><div class="section-title">Incoming Orders</div>
+        <div class="section-sub">${orders.length} waiting · Accept to begin delivery</div></div></div>
+      <div class="search-filter-row">
+        <input type="search" placeholder="Search orders…" value="${query}" oninput="window.__orderSearch(this.value)">
+      </div>
+      <div id="orders-list"></div>`;
+      const list = document.getElementById('orders-list');
+      if (!filtered.length) {
+        list.appendChild(emptyState(query ? 'No matching orders.' : 'No pending orders at this time.'));
+        return;
+      }
+      filtered.forEach(o => list.appendChild(orderCard(o, 'crew')));
+    };
+    window.__orderSearch = q => { query = q; draw(); };
+    draw();
   } catch (e) { el.innerHTML = errState(e.message); }
 }
 
 async function renderMyDeliveries(el) {
   try {
     const orders = await apiFetch('/orders/deliveries');
-    el.innerHTML = `<div class="page-header"><div><div class="section-title">My Deliveries</div></div></div>`;
-    if (!orders.length) { el.appendChild(emptyState('No deliveries assigned yet.')); return; }
-    orders.forEach(o => el.appendChild(orderCard(o, 'crew')));
+    let query = '';
+    const draw = () => {
+      const filtered = filterOrdersByQuery(orders, query);
+      el.innerHTML = `<div class="page-header"><div><div class="section-title">My Deliveries</div>
+        <div class="section-sub">${orders.filter(o => o.status === 'ACCEPTED').length} active</div></div></div>
+      <div class="search-filter-row">
+        <input type="search" placeholder="Search deliveries…" value="${query}" oninput="window.__orderSearch(this.value)">
+      </div>
+      <div id="orders-list"></div>`;
+      const list = document.getElementById('orders-list');
+      if (!filtered.length) {
+        list.appendChild(emptyState(query ? 'No matching deliveries.' : 'No deliveries assigned yet.'));
+        return;
+      }
+      filtered.forEach(o => list.appendChild(orderCard(o, 'crew')));
+    };
+    window.__orderSearch = q => { query = q; draw(); };
+    draw();
   } catch (e) { el.innerHTML = errState(e.message); }
 }
 
@@ -1940,17 +2415,23 @@ async function renderAllOrders(el) {
   try {
     let orders = await apiFetch('/orders/all');
     let fs = 'all';
+    let searchQ = '';
     const draw = () => {
-      const list = fs === 'all' ? orders : orders.filter(o => o.status.toLowerCase() === fs);
+      let list = fs === 'all' ? orders : orders.filter(o => o.status.toLowerCase() === fs);
+      list = filterOrdersByQuery(list, searchQ);
       el.innerHTML = `
         <div class="page-header">
           <div><div class="section-title">All Orders</div></div>
           <button class="btn btn-primary btn-sm" onclick="navigateTo('place-order')">New Order</button>
         </div>
-        <div class="flex gap-8 mb-16" style="flex-wrap:wrap">
+        <div class="flex gap-8 mb-16 filter-pills">
           ${['all','pending','accepted','completed'].map(s =>
-            `<button class="btn btn-sm ${fs===s?'btn-primary':'btn-outline'}" onclick="__fs('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
+            `<button class="filter-pill ${fs===s?'active':''}" onclick="__fs('${s}')">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`
           ).join('')}
+        </div>
+        <div class="search-filter-row">
+          <input type="search" placeholder="Search orders, trains, customers…" value="${searchQ}"
+            oninput="window.__orderListFilter(this.value)">
         </div>
         <div class="card table-scroll" style="padding:0;overflow-x:auto">
           <table class="dt">
@@ -1975,6 +2456,7 @@ async function renderAllOrders(el) {
           </table>
         </div>`;
       window.__fs = s => { fs = s; draw(); };
+      window.__orderListFilter = q => { searchQ = q; draw(); };
     };
     draw();
   } catch (e) { el.innerHTML = errState(e.message); }
@@ -2265,6 +2747,88 @@ function viewFullImage(src) {
 /* ════════════════════════════════════════════════════════
    ORDER CARD
 ════════════════════════════════════════════════════════ */
+function filterOrdersByQuery(list, query) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return list;
+  return list.filter(o => {
+    const hay = [
+      o.id, o.userName, o.trainNo, o.trainName, o.currentLocation, o.stallName,
+      o.status, o.eta, ...(o.items || []).map(i => i.name)
+    ].join(' ').toLowerCase();
+    return q.split(/\s+/).every(w => hay.includes(w));
+  });
+}
+
+function orderTimelineHTML(o) {
+  const status = (o.status || 'PENDING').toUpperCase();
+  const idx = status === 'COMPLETED' ? 2 : status === 'ACCEPTED' ? 1 : 0;
+  const steps = [
+    { label: 'Placed', time: o.createdAt },
+    { label: 'Accepted', time: o.acceptedAt },
+    { label: 'Delivered', time: o.completedAt },
+  ];
+  return `<div class="order-timeline">${steps.map((s, i) => `
+    <div class="timeline-step ${i <= idx ? 'active' : ''}">
+      <div class="step-dot"></div>
+      <div class="step-label">${s.label}</div>
+      ${s.time && i <= idx ? `<div class="step-time">${fmt(s.time).split(' ').slice(-2).join(' ')}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+function receiptHTML(o) {
+  const isStall = (o.orderType || 'train') === 'stall';
+  const rows = (o.items || []).map(i =>
+    `<tr><td>${i.name}</td><td style="text-align:center">${i.qty}</td><td style="text-align:right">₹${i.price * i.qty}</td></tr>`
+  ).join('');
+  return `
+    <div class="receipt-card" id="print-receipt">
+      <div class="receipt-header">
+        <div class="receipt-title">KB ENTERPRISES</div>
+        <div class="receipt-subtitle">Order Receipt · ${o.id}</div>
+      </div>
+      <div class="receipt-meta">
+        <div><span>Customer</span>${o.userName}</div>
+        <div><span>Date</span>${fmt(o.createdAt)}</div>
+        ${isStall
+          ? `<div><span>Stall</span>${o.stallName || o.trainName}</div><div><span>Location</span>${o.stallLocation || o.currentLocation || '—'}</div>`
+          : `<div><span>Train</span>${o.trainNo} · ${o.trainName}</div><div><span>ETA</span>${o.eta || '—'}</div>`}
+        <div><span>Status</span>${o.status}</div>
+        <div><span>Total</span>₹${o.total}</div>
+      </div>
+      <table class="receipt-table">
+        <thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="receipt-total-row"><span>Grand Total</span><span>₹${o.total}</span></div>
+      <div class="receipt-footer">Thank you for choosing KB ENTERPRISES<br>Railway Pantry &amp; Stall Services</div>
+    </div>`;
+}
+
+async function openReceipt(oid, orderData) {
+  try {
+    let o = orderData;
+    if (!o) {
+      const role = (currentUser?.role || '').toUpperCase();
+      if (role === 'ADMIN') {
+        o = (await apiFetch('/orders/all')).find(x => x.id === oid);
+      } else if (role === 'CREW') {
+        o = (await apiFetch('/orders/deliveries')).find(x => x.id === oid)
+          || (await apiFetch('/orders/pending')).find(x => x.id === oid);
+      } else {
+        o = (await apiFetch('/orders/my')).find(x => x.id === oid);
+      }
+    }
+    if (!o) { toast('Order not found', 'err'); return; }
+    openModal(`
+      <div class="modal-title">Receipt — ${o.id}</div>
+      ${receiptHTML(o)}
+      <div class="print-btn-row">
+        <button class="btn btn-primary btn-full" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn btn-outline btn-full" onclick="closeModal()">Close</button>
+      </div>`);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
 function orderCard(o, viewer) {
   const d = document.createElement('div');
   d.className = 'order-card';
@@ -2282,6 +2846,9 @@ function orderCard(o, viewer) {
     if (status === 'pending')
       actions += `<button class="btn btn-outline btn-sm" onclick="openAssign('${o.id}')">Assign Crew</button>`;
     actions += ` <button class="btn btn-outline btn-sm" onclick="openDetail('${o.id}')">View Details</button>`;
+  }
+  if (status === 'completed') {
+    actions += `${actions ? ' ' : ''}<button class="btn btn-outline btn-sm" onclick="openReceipt('${o.id}')">Receipt</button>`;
   }
   const metaHtml = isStall
     ? `<div class="meta-item"><strong>${o.userName}</strong>Owner</div>
@@ -2302,6 +2869,7 @@ function orderCard(o, viewer) {
       ${crew ? `<div class="meta-item"><strong>${crew.name}</strong>Crew</div>` : ''}
       ${o.completedAt ? `<div class="meta-item"><strong>${fmt(o.completedAt)}</strong>Completed</div>` : ''}
     </div>
+    ${orderTimelineHTML(o)}
     <div class="order-items-section">
       ${(o.items||[]).map(i => `<div class="item-row"><span>${i.name}</span><span style="color:var(--text-muted)">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
       <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
@@ -2426,6 +2994,7 @@ async function openDetail(oid) {
     const crew = o.assignedCrewId ? crewById(o.assignedCrewId) : null;
     openModal(`
       <div class="modal-title">Order ${o.id}</div>
+      ${orderTimelineHTML(o)}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
         ${[['Customer',o.userName],['Train No.',o.trainNo],['Train Name',o.trainName],
            ['Location',o.currentLocation],['ETA',o.eta],['Status',o.status],
@@ -2439,6 +3008,9 @@ async function openDetail(oid) {
       <div class="card-title mb-8">Items</div>
       ${(o.items||[]).map(i=>`<div class="item-row"><span>${i.name}</span><span class="muted">× ${i.qty}</span><span>₹${i.price*i.qty}</span></div>`).join('')}
       <div class="item-row total-row"><span>Total</span><span></span><span>₹${o.total}</span></div>
+      <div class="print-btn-row mt-16">
+        ${o.status === 'COMPLETED' ? `<button class="btn btn-outline btn-sm" onclick="openReceipt('${o.id}')">View Receipt</button>` : ''}
+      </div>
     `);
   } catch (e) { toast(e.message, 'err'); }
 }
